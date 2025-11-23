@@ -5,8 +5,13 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#define MAX_INPUT 1024 //maxima letras admitidos
-#define MAX_ARGS 64 //numero maximo de argumetnos
+//para mayor organizacion la declaracion de las funciones en la libreia 
+#include"lib_andromeda.h"
+
+
+
+//#define MAX_INPUT 1024 //maxima letras admitidos
+//#define MAX_ARGS 64 //numero maximo de argumetnos
 
 /**
  * genrear los tokens para la proceso de comandos
