@@ -22,4 +22,14 @@
 
 
 
+int ejecuta_comandos_sistema(char **args);
+
+
+int borrar_rastro(char **args);
+
+int procesar_comando(char **args);
+
+
+
+
 #endif
