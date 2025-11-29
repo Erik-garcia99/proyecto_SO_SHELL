@@ -39,6 +39,7 @@ char **parse_input(char *line);
 void print_command_info(char **args);
 
 
+
 //aqui van las funciones del deep y ver como las puedo adaptar 
 
 

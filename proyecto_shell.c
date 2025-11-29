@@ -7,17 +7,82 @@
 #include<fcntl.h>
 
 
-//para mayor organizacion la declaracion de las funciones en la libreia 
-#include"lib_andromeda.h"
+
+//macros 
+#define MAX_INPUT 1024 //maxima letras admitidos
+#define MAX_ARGS 64 //numero maximo de argumetnos
 
 
 
-//#define MAX_INPUT 1024 //maxima letras admitidos
-//#define MAX_ARGS 64 //numero maximo de argumetnos
+//funciones ]
+
+/***
+*
+*@brief genera los tokesn para el proceso de comandos 
+*@params line apuntador de la linea actual de entrada 
+*@retun toekens -> entrada separa en tokens
+*
+*/
+char **parse_input(char *line);
+
+/**
+ * 
+ * @brief 
+ * 
+ * 
+ */
+int ejecuta_comandos_sistema(char **args);
+
+int borrar_rastro(char **args);
+int procesar_comando(char **args);
+
+int main() {
+    char input[MAX_INPUT];
+    char **args;
+    int status = 1; // 1 para continuar, 0 para salir
+
+    printf("===shell===\n");
+    printf("Escribe 'exit' para salir\n\n");
+
+    while (status) {
+		char cwd[1024];
+		if(getcwd(cwd,sizeof(cwd)) != NULL){
+	
+		printf("%s >> ", cwd);
+		}
+		else{
+	
+			printf(">>> ");
+		}
+
+		fflush(stdout);
+
+		//leer la entrad:
+
+	
+        if (fgets(input, MAX_INPUT, stdin) == NULL) {
+            break; // Error o EOF
+        }
+
+        // Parsear entrada
+        args = parse_input(input);
+
+        status = procesar_comando(args);
+
+        // Mostrar información del comando (en lugar de ejecutarlo)
+       // print_command_info(args);
+
+        free(args);
+    }
+    return 0;
+}
+
 
 /**
  * genrear los tokens para la proceso de comandos
  */
+
+
 char **parse_input(char *line) {
     int position = 0;
     char **tokens = malloc(MAX_ARGS * sizeof(char*));
@@ -43,75 +108,6 @@ char **parse_input(char *line) {
     return tokens;
 }
 
-/**
- * infromacion de lo que se ingreso, por ahora para concoer que eralmente se esta ingresando correctamante 
-
-void print_command_info(char **args) {
-    if (args[0] == NULL) {
-        return; // No hay comando
-    }
-
-    printf("\n--- informacion del comando ---\n");
-    printf("Comando principal: %s\n", args[0]);
-    
-    printf("argumentos: ");
-    for (int i = 1; args[i] != NULL; i++) {
-        printf("[%s] ", args[i]);
-    }
-    printf("\ntotal de argumentos: ");
-    
-    int arg_count = 0;
-    for (int i = 1; args[i] != NULL; i++) {
-        arg_count++;
-    }
-    printf("%d\n", arg_count);
-    printf("-------------------------------\n\n");
-}
-*/
-
-
-
-
-int main() {
-    char input[MAX_INPUT];
-    char **args;
-    int status = 1; // 1 para continuar, 0 para salir
-
-    printf("===shell===\n");
-    printf("Escribe 'exit' para salir\n\n");
-
-    while (status) {
-	char cwd[1024];
-	if(getcwd(cwd,sizeof(cwd)) != NULL){
-	
-		printf("%s >> ", cwd);
-	}
-	else{
-	
-		printf(">>> ");
-	}
-
-	fflush(stdout);
-
-	//leer la entrad:
-
-	
-        if (fgets(input, MAX_INPUT, stdin) == NULL) {
-            break; // Error o EOF
-        }
-
-        // Parsear entrada
-        args = parse_input(input);
-
-        status = procesar_comando(args);
-
-        // Mostrar información del comando (en lugar de ejecutarlo)
-       // print_command_info(args);
-
-        free(args);
-    }
-    return 0;
-}
 
 
 int ejecuta_comandos_sistema(char **args){
