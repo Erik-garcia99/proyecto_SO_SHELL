@@ -20,6 +20,29 @@
 *
 */
 
+char **parse_input(char *line);
+
+
+/** 
+ *
+ *@info esta funcion solo es como para debuggear en el formato final no sera utilada 
+ *
+ *@brief imprime la infromacion de lo que se ingrese, solo apa confirmar 
+ *
+ *
+ *@params args -> argumentos que se ingresaron como e comando y sus parametros por dar un ejemplo 
+ *
+ *
+ * @return NULL
+*/
+
+void print_command_info(char **args);
+
+
+//aqui van las funciones del deep y ver como las puedo adaptar 
+
+
+
 
 
 int ejecuta_comandos_sistema(char **args);
