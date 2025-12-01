@@ -33,8 +33,20 @@ char **parse_input(char *line);
  */
 int ejecuta_comandos_sistema(char **args);
 
-int borrar_rastro(char **args);
+
+
+
 int procesar_comando(char **args);
+//comandos 
+
+
+
+//script
+
+int fantasma_rm(char **args);
+int borrar_rastro(char **args);
+
+
 
 int main() {
     char input[MAX_INPUT];
@@ -150,6 +162,44 @@ int ejecuta_comandos_sistema(char **args){
 
 
 
+int procesar_comando(char **args){
+
+	if(args[0] == NULL){
+	
+		return 1; //comandos vacio
+	}
+
+
+	//salir del sistema 
+	if(strcmp(args[0], "exit") == 0){
+	
+		printf("saliendo del sistema\n");
+		return 0;
+	}
+	
+	
+	//por ahora solo procesa el comando de borrar rastro 
+	
+	if(strcmp(args[0], "borrar_rastro") == 0){
+		return borrar_rastro(args);
+	}
+
+
+	if(strcmp(args[0], "fantasma-rm") == 0){
+		return fantasma_rm(args);
+	}
+
+
+
+
+	return ejecuta_comandos_sistema(args);
+}
+
+
+
+
+//scripts 
+
 int borrar_rastro(char **args){
 
 	pid_t pid;
@@ -191,30 +241,66 @@ int borrar_rastro(char **args){
 	return 1;
 }
 
-int procesar_comando(char **args){
 
-	if(args[0] == NULL){
+
+int fantasma_rm(char **args){
+
+	pid_t pid; 
+	int status; 
+
+	pid = fork();
+
+	if(pid == 0){
 	
-		return 1; //comandos vacio
+		//proceso hijo 
+		//
+		char *new_args[] = {"./fantasma/fantasma-rm", NULL};
+
+		//copiar arguemntos adicionales
+		if(args[1] != NULL){
+		
+			int i=1;
+			new_args[0]="./fantasma-rm/fantasma-rm";
+			while(args[i] != NULL && MAX_ARGS -1){
+				new_args[i] = args[i];
+				i++;
+			
+			}
+
+			new_args[i]=NULL;
+		}
+
+
+		if(execvp(new_args[0], new_args)==-1){
+		
+			perror("error ejecutando fantasma-rm");
+		}
+
+		exit(EXIT_FAILURE);
 	}
-
-
-	//salir del sistema 
-	if(strcmp(args[0], "exit") == 0){
-	
-		printf("saliendo del sistema\n");
-		return 0;
+	else if(pid < 0){
+		perror("error en fork");
+		
 	}
-	
-	
-	//por ahora solo procesa el comando de borrar rastro 
-	
-	if(strcmp(args[0], "borrar_rastro") == 0){
-		return borrar_rastro(args);
+	else{
+
+		//proceso padre
+
+		do{
+
+			waitpid(pid, &status, WUNTRACED);
+
+
+		}while(!WIFEXITED(status) && !WIFSIGNALED(status));
+
 	}
+	return 1;
 
-
-
-	return ejecuta_comandos_sistema(args);
 }
+
+
+
+
+//%%%%%%%%%%%%%%%%5comadnos%%%%%%%%%%%%%%%%%%%%55
+//
 
