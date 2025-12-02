@@ -11,7 +11,7 @@
 //macros 
 #define MAX_INPUT 1024 //maxima letras admitidos
 #define MAX_ARGS 64 //numero maximo de argumetnos
-
+#define MAX_PIPE 10
 
 
 //funciones ]
@@ -25,6 +25,24 @@
 */
 char **parse_input(char *line);
 
+
+
+int procesar_linea_comando(char *line);
+
+
+
+/**
+ * si la entrada es solo un comando entonces se llamara a esta funcion que solo tendra la tarea 
+ * de ejecutar un comando simple sin pipeline, tanto dels sitema como los propros y los scripts 
+ * 
+ * 
+ */
+int procesar_comando(char **args);
+
+
+
+
+
 /**
  * 
  * @brief 
@@ -36,7 +54,6 @@ int ejecuta_comandos_sistema(char **args);
 
 
 
-int procesar_comando(char **args);
 //comandos 
 
 
@@ -85,9 +102,9 @@ int main() {
 		 * que se encuentre el salto de linea 
 		 * 
 		 */
-        if (fgets(input, MAX_INPUT, stdin) == NULL) {
-            break; // Error o EOF
-        }
+		if (fgets(input, MAX_INPUT, stdin) == NULL) {
+            		break; // Error o EOF
+        	}
 
         // una vez obtenido lo que el usuario ingreso, pasamos a separar por tokens 
 		/**
@@ -98,7 +115,7 @@ int main() {
 		 * 
 		 * 
 		 */
-        args = parse_input(input);
+        	args = parse_input(input);
 
 		/**
 		 * una vez teneindo los tokens en hora de saber que es lo que quiere hacer el usuario?
@@ -106,12 +123,16 @@ int main() {
 		 * 
 		 */
 
-        status = procesar_comando(args);
+       	 	status = procesar_comando(args);
 
         // Mostrar información del comando (en lugar de ejecutarlo)
        // print_command_info(args);
 
-        free(args);
+        	free(args);
+
+		//modificacion para funcionar con pipeline y redireccionamiento 
+		//status = procesar_linea_comadno(input);
+
     }
     return 0;
 }
@@ -176,6 +197,17 @@ char **parse_input(char *line) {
 
 
 
+int procesar_linea_comando(char *line){
+
+
+	
+
+	return 1;
+}
+
+
+
+
 int procesar_comando(char **args){
 
 	if(args[0] == NULL){
@@ -213,7 +245,7 @@ int procesar_comando(char **args){
 
 
 
-
+//este va a pasar a ser -> procesar_comando_simple
 int ejecuta_comandos_sistema(char **args){
 
 	//declaramos variables a utuliza, pid que tomara el id de proceso al ejecutar el comadno fork 
@@ -287,6 +319,13 @@ int ejecuta_comandos_sistema(char **args){
 	}
 
 	return 1;
+
+}
+
+int procesar_redirecciones(char **args){
+
+
+
 
 }
 
