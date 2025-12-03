@@ -56,7 +56,7 @@ int ejecuta_comandos_sistema(char **args);
 
 //comandos 
 
-
+int cifrado_xor(char **args);
 
 //script
 
@@ -247,6 +247,12 @@ int procesar_comando(char **args){
 	}
 
 
+	if(strcmp(args[0], "comando_xor") == 0){
+
+		return cifrado_xor(args);
+	}
+
+
 	//en caso de no ser un comando local especial o uno de los scripts/comandos 
 	//propios quiere decir que quiere ejeuctar algun otro comando s
 
@@ -323,7 +329,9 @@ int ejecuta_comandos_sistema(char **args){
 			 * terminado por senial, osea sigue esperando mientras el proceco este vivo, detenia o en cualuqier 
 			 * otro estado menos en terminado 
 			 * 
-			 * 
+			 * esta esperando a que termine el hijo
+			 *
+			 *
 			 */
 		}while(!WIFEXITED(status) && !WIFSIGNALED(status));
 	}
@@ -473,3 +481,49 @@ int fantasma_rm(char **args){
 
 //%%%%%%%%%%%%%%%%5comadnos%%%%%%%%%%%%%%%%%%%%55
 
+int cifrado_xor(char **args){
+
+
+	pid_t pid;
+	int status;
+
+
+	pid = fork();
+
+
+	if(pid == 0){
+	
+		char *new_args[4];
+
+		new_args[0]="./comando_xor/comando_xor";
+		new_args[1]= args[1]; //archiov
+		new_args[2]=args[2]; //clave de cifrado
+		new_args[3]=NULL;
+
+
+		if(execvp(new_args[0], new_args) == -1){
+			fprintf(stderr, "error al buscar el directorio .cifrado_xor/cifrado_xor\n");
+
+		
+		}
+
+		exit(EXIT_FAILURE);
+	
+	}
+	else if(pid < 0){
+	
+		perror("error en fork");
+	}
+	else{
+	
+		//proceso padre 
+		//
+		do{
+		
+			
+			waitpid(pid, &status, 0);
+		}while(!WIFEXITED(status) && !WIFSIGNALED(status));
+	}
+	
+	return 1;
+}
