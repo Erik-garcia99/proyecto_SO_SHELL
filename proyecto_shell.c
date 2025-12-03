@@ -56,12 +56,15 @@ int ejecuta_comandos_sistema(char **args);
 
 //comandos 
 
-
+int cifrado_xor(char **args);
 
 //script
 
 int fantasma_rm(char **args);
 int borrar_rastro(char **args);
+
+
+
 
 
 
@@ -153,7 +156,7 @@ char **parse_input(char *line) {
 	/**
 	 * !!importante -> token va a modificar el parametro "line"
 	 */
-    token = strtok(line, " \t\n\r|");
+    token = strtok(line, " \t\n\r");
     
 	while (token != NULL) {
 		//lo que se hace es recorrer 
@@ -238,6 +241,12 @@ int procesar_comando(char **args){
 
 	if(strcmp(args[0], "fantasma-rm") == 0){
 		return fantasma_rm(args);
+	}
+
+
+	if(strcmp(args[0], "comando_xor") == 0){
+	
+		return cifrado_xor(args);
 	}
 
 
@@ -410,4 +419,54 @@ int fantasma_rm(char **args){
 
 
 //%%%%%%%%%%%%%%%%5comadnos%%%%%%%%%%%%%%%%%%%%55
+
+int cifrado_xor(char **args){
+
+
+	pid_t pid;
+	int status;
+
+
+	pid = fork();
+
+
+	if(pid == 0){
+	
+		char *new_args[4];
+
+		new_args[0]="./comando_xor/comando_xor";
+		new_args[1]= args[1]; //archiov
+		new_args[2]=args[2]; //clave de cifrado
+		new_args[3]=NULL;
+
+
+		if(execvp(new_args[0], new_args) == -1){
+			fprintf(stderr, "error al buscar el directorio .cifrado_xor/cifrado_xor\n");
+
+		
+		}
+
+		exit(EXIT_FAILURE);
+	
+	}
+	else if(pid < 0){
+	
+		perror("error en fork");
+	}
+	else{
+	
+		//proceso padre 
+		//
+		do{
+		
+			
+			waitpid(pid, &status, 0);
+		}while(!WIFEXITED(status) && !WIFSIGNALED(status));
+	}
+	
+	return 1;
+}
+
+
+
 
