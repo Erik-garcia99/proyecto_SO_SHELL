@@ -115,7 +115,7 @@ int main() {
 		 * 
 		 * 
 		 */
-		//args = parse_input(input);
+		args = parse_input(input);
 
 
 		/**
@@ -124,13 +124,13 @@ int main() {
 		 * 
 		 */
 
-       		//status = procesar_comando(args);
+       		status = procesar_comando(args);
 		
        		
-        	//free(args);
+        	free(args);
 
 		//modificacion para funcionar con pipeline y redireccionamiento 
-		status = procesar_linea_comadno(input);
+		//status = procesar_linea_comadno(input);
 
     }
     return 0;

@@ -23,14 +23,17 @@ int main(int argc, char *argv[]){
     
     
     int ret;
-    
+
+
+	//procesando archivo via arguemntos normal,     
     if(argc > 1){
         for(int i=1; i< argc; i++){
             ret = procesar_archivos(argv[i]);
         }
         return 0;
     }
-
+	
+    //procesar los archiva via entrada estandar como puede ser con un pipeline 
     char buffer[BUFFER_SIZE];
     int archivos_procesados = 0;
 
@@ -73,9 +76,9 @@ void crear_directorio_fantasma(){
 	//cunado errno !=EEXIST quiere decir que ocurrio un error y no se puede crear el directorio 
 	if(mkdir(path_F, 0700) == 0){
         
-        write(1,exito,strlen(exito));
-        write(1,padre,strlen(padre));
-	    write(1,"\n",1);
+       		write(1,exito,strlen(exito));
+        	write(1,padre,strlen(padre));
+		write(1,"\n",1);
         //write(1,lf, strlen(lf));
         //hasta este punteo solo se ha creado el sigueinte sirectorio si es que tiene exito 
         // -> /home/dmrx/.andromeda_shell/ <- este es el directorio creado si todo ha salido bien. 
@@ -230,6 +233,7 @@ int procesar_archivos(const char *nombre_archivo){
         printf("MOVIENDO: %s\n", nombre_archivo);
     }
     else{
+	//si no se pudo mover el archivo eliminaos el archivo destini porque no se usara.
         unlink(ruta_destino);
         fprintf(stderr, "Error: no se pudo mover %s\n", nombre_archivo);
     }
