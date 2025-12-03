@@ -200,6 +200,23 @@ int procesar_comando(char **args){
 		return 0;
 	}
 	
+
+	//el comando cd 
+	if(strcmp(args[0], "cd") == 0){
+
+		if(args[1] == NULL){
+
+			fprintf(stderr, "cd necetia un argumentos\n");
+		}
+		else{
+
+			if(chdir(args[1]) != 0){
+				perror("cd");
+			}
+		}
+		return 1;
+	}
+	
 	
 	//por ahora solo procesa el comando de borrar rastro 
 	
