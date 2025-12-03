@@ -1,4 +1,4 @@
-
+#include<stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
 	
 	//verificia que se hayan ingresados los parametroa necesarios
     if (argc < 3){ 
-	return write(2, "Uso: cifra-xor <archivo> <clave>\n", 36), 1;
+	return write(2, "Uso: cifra-xor <archivo> <clave>\n", 34), 1;
     }	
 
 
