@@ -76,11 +76,7 @@ int main() {
 
     while (status) {
 		char cwd[1024];
-		//obetenemos el directorio actual, esto se hace para orientar al usuario en donde esta 
-		//sin este solo se veria >>> y el usuario no sabria en que directorio esta y puede ejeucar un 
-		//comando que pueda modificar o eliminar archivos importantes por lo que con este 
-		//con el comando "getcwd()" se obtiene el directorio /home/user/dir/ >>>
-
+		//obetenemos el directorio actual,
 		//esta funcion asgina en el buffer cwd el directorio acutla en donde se enceuntra 
 		if(getcwd(cwd,sizeof(cwd)) != NULL){
 	
@@ -98,8 +94,6 @@ int main() {
 
 		/**
 		 * comprobamos si es que hay error o encuentra el final sale 
-		 * va a guardar en el buffer del comadno, la entrada del usuario hasta 
-		 * que se encuentre el salto de linea 
 		 * 
 		 */
 		if (fgets(input, MAX_INPUT, stdin) == NULL) {
@@ -107,6 +101,7 @@ int main() {
         	}
 
         // una vez obtenido lo que el usuario ingreso, pasamos a separar por tokens 
+<<<<<<< HEAD
 		/**
 		 * el comando, para saber que comando o script quiere ejeuctar, parametros y archivos con los que va a 
 		 * trabajar.
@@ -117,6 +112,9 @@ int main() {
 		 */
 		//args = parse_input(input);
 
+=======
+        args = parse_input(input);
+>>>>>>> 68490cac3020b5da8202947cf432d9e3f64a9bb3
 
 		/**
 		 * una vez teneindo los tokens en hora de saber que es lo que quiere hacer el usuario?
@@ -124,6 +122,7 @@ int main() {
 		 * 
 		 */
 
+<<<<<<< HEAD
        		//status = procesar_comando(args);
 		
        		
@@ -131,6 +130,14 @@ int main() {
 
 		//modificacion para funcionar con pipeline y redireccionamiento 
 		status = procesar_linea_comadno(input);
+=======
+       	status = procesar_comando(args);
+
+
+
+        free(args);
+
+>>>>>>> 68490cac3020b5da8202947cf432d9e3f64a9bb3
 
     }
     return 0;
@@ -141,7 +148,7 @@ int main() {
  * genrear los tokens para la proceso de comandos
  * 
  * su funciones es tomar lo que ingreso el usurio y regresar un arreglo de cadenas donde cada elementos 
- * es un token, estos token estal delimitados pro espacios, tabs, saltos de linea, retorno de corro
+ * es un token
  * 
  * 
  */
@@ -167,9 +174,6 @@ char **parse_input(char *line) {
     }
 
 	/**
-	 * strok en la primrea pasada devuelve un apuntador de la primera subcadena 
-	 * que se encuentre que este delimitado por los caracteres
-	 * 
 	 * !!importante -> token va a modificar el parametro "line"
 	 */
     token = strtok(line, " \t\n\r|");
@@ -182,14 +186,10 @@ char **parse_input(char *line) {
         if (position >= MAX_ARGS) {
             break;
         }
-		/**
-		 * cunado se le pasa un parametro NULL en la sigueinte lectrua se lele una copia almacenada 
-		 * del ultimo parametro de strin1 no nulo -> devuelve puntero al sigueinte token e la lista. 
-		 */
+		
         token = strtok(NULL, " \t\n\r");
     }
 	//la cadena de token lo terminamos con NULL porqeu las funciones que trabajan con los procesos esperan que 
-	//la lista termine con NULL 
     tokens[position] = NULL;
     return tokens;
 }
@@ -248,17 +248,15 @@ int procesar_comando(char **args){
 
 
 	//en caso de no ser un comando local especial o uno de los scripts/comandos 
-	//propios quiere decir que quiere ejeuctar algun otro comando s
-
 	return ejecuta_comandos_sistema(args);
 }
 
 
 
-//este va a pasar a ser -> procesar_comando_simple
+
 int ejecuta_comandos_sistema(char **args){
 
-	//declaramos variables a utuliza, pid que tomara el id de proceso al ejecutar el comadno fork 
+
 	pid_t pid;
 	int status;
 
@@ -275,16 +273,6 @@ int ejecuta_comandos_sistema(char **args){
 	//del comando que el usurio solicito
 	if(pid == 0){
 	
-		//proceso hijo
-		//funcion para ejecutar cualquier comando del sistema, creacion de un proceso que no sea igual al padre que lo invoco 
-		/**
-		 * la funcion execvp remplaza el proceso hijo crfeado con uno nuevo, en este caso es un proceos 
-		 * que responde al comando en la primera posicion del argumento args[] el cual se busca en el PATH del sistema
-		 * como segundo parametro es toda la lista de argumentos, esto porque si no se pone el comando a ejecutar 
-		 * con sus argumentos la funcion falla y regresa -1 que indica el fallo.
-		 * 
-		 */
-		
 		if(execvp(args[0], args)==-1){
 			perror("Error ejecuando comadno");
 		}
@@ -301,30 +289,12 @@ int ejecuta_comandos_sistema(char **args){
 		/**
 		 * estete va a esperar a que el hijo con el pid dado cambie de estado, 
 		 * 
-		 * en este caso que el proceso hijo termiena ya sea por exit() o por una senial.
-		 * 
-		 * el hecho de estar en un ciclo es por si un hijo no ha terminado si no que esta pausado. 
-		 * 
-		 * 
-		 * 
-		 * la opcion WUNTRACED hace que waitpid retrono tambien cunado el hijo este dentenido. 
-		 * 
-		 * en este caso estamso esperando a que el hijo termine por completo 
 		 * 
 		 */
 		do{
 
-			waitpid(pid, &status, 0);
-			
-			//macros que nos ayudan a examinar el estado en el que se encuentra el hijo 
+			waitpid(pid, &status, 0);	
 
-			/**
-			 * lo que esta pasando es que, mientras el hijo no haya terminao normalmente y no haya sido
-			 * terminado por senial, osea sigue esperando mientras el proceco este vivo, detenia o en cualuqier 
-			 * otro estado menos en terminado 
-			 * 
-			 * 
-			 */
 		}while(!WIFEXITED(status) && !WIFSIGNALED(status));
 	}
 
@@ -345,13 +315,6 @@ int procesar_redirecciones(char **args){
 
 //scripts 
 
-/**
- * 
- * el codigo es algo parecido al otro, pero lo quiero mantenre separado por si ocurre 
- * algun error con este script solo sea en esta funcion y solucionarlo mucho mas facil 
- * 
- * 
- */
 
 int borrar_rastro(char **args){
 
@@ -370,29 +333,10 @@ int borrar_rastro(char **args){
 		//el arreglo debe terminar con NULL porque asi es necesario para execvp
 		char *new_args[]={"./borrar_rastro/borrar_rastro", args[1], NULL}; 
 
-		/**
-		 * 
-		 * ahora estamos cambinado el proceos creado por el fork al proceso al cual se esta llamando 
-		 * con la direccion del primer indice del arreglo, si todo tiene exito se ejecutara el proceos 
-		 * 
-		 * 
-		 * como es que funciona exevp?
-		 * 
-		 * lo que hace es reemplazar completamente el programa actual por uno nuevo, por lo que las lineas que estan 
-		 * despues de esta llamada no se ejecutan. 
-		 * 
-		 * 
-		 */
 		if(execvp(new_args[0],new_args) == -1){
 		
 			perror("error ejecutando borrar_rastro");
 		}
-		/**
-		 * si la ejecucion execvp falla este va a mostrar en pantalla el mensaje de erro y luego 
-		 * llama a "exit" con la macro estbalceita para terminar, lo cual cerrara todos los descriptores de archivo.
-		 * 
-		 * porque si tiene exito nunca se regresa. 
-		 */
 		exit(EXIT_FAILURE);
 	}
 	else if(pid < 0){

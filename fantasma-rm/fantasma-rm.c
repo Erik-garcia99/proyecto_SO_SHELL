@@ -63,35 +63,28 @@ void crear_directorio_fantasma(){
 	char fallo[]="fallo al crear el directorio directorio existente";
 	
 	char padre[]=".andormeda_shell/\n";//este es solo para imprimir 
-	//const char *lf='\n';
-    
+
 	// -> /home/dmrx/.andromeda_shell/ -> tratare de crear primero
 	int n=snprintf(path_F, sizeof(path_F), "%s%s", getenv("HOME"), GHOSTZONE_BASE_FATHER);
-	
-	//si EEXIT se establce quiere decir que el archivo que se quiere crear ya existe, por lo que el archivo no debe existor
 
-	//cunado errno !=EEXIST quiere decir que ocurrio un error y no se puede crear el directorio 
 	if(mkdir(path_F, 0700) == 0){
         
         write(1,exito,strlen(exito));
         write(1,padre,strlen(padre));
 	    write(1,"\n",1);
-        //write(1,lf, strlen(lf));
-        //hasta este punteo solo se ha creado el sigueinte sirectorio si es que tiene exito 
+   
         // -> /home/dmrx/.andromeda_shell/ <- este es el directorio creado si todo ha salido bien. 
 
 
 	}
 	else if (errno == EEXIST){
         //verificando que no exista 
-		//write(1,fallo,strlen(fallo));
-       		//write(1,padre,strlen(padre));
-        	//write(1,"\n",1);
+
 	}
 	else{
-        	//otro tipo de error
+        //otro tipo de error
 		perror("error al crear la carpeta padre");
-    		write(1,"\n",1);
+    	write(1,"\n",1);
 
 	}
 
@@ -102,7 +95,7 @@ void crear_directorio_fantasma(){
     strcat(path_F, directorio_oct);
 
 	//en este momento el arreglo path_F tiene la sigueinte rua: /home/dmrx/.andormeda_shell/.ghostzone/ 
-    // puts(path_F);
+
 
 	if(mkdir(path_F,0700)==0){
 
@@ -127,35 +120,23 @@ void crear_directorio_fantasma(){
 
 
 int procesar_archivos(const char *nombre_archivo){
-    // Verificando que el archivo existe 
+    
     //la funcion lo access comprueba si en el proceso en el que se hace la llamada al sistema puede acceder a la ruta del archivo que se le paso
-    //utilizando el modo "F_OK" solo se quiere saber si existe el archivo, la funcion regresa un 0 si la comprobacion de genera de manera exitosa
-    //el archivo existe en la ruta dada, puede ser en nuestro directorio actual o una direccionde ruta absolula que se le haya pasado 
+    //utilizando el modo "F_OK" solo se quiere saber si existe el archivo
     if(access(nombre_archivo, F_OK)==-1){
         fprintf(stderr, "Error archivo %s no existe\n", nombre_archivo);
         return -1;
     }
 
-    //nombre del archivo sin ruta 
-    // printf("\n");
-    // puts(nombre_archivo);
-
 
     /**
-     * strrchr lo que hace es buscar dentro de la ruta o de la cadena que se le paso la utlima posicion en donde aparece x caractere en este caso
      * se le esta diciendo que queremos saber en donde esta el ultimo '/' esto porque?
      * nuestro shell tiene que tener la posibilidad de darle una ruta absoluta, entonces una ruta absolita lo que contendra seria 
      * /home/usuer/docuemntos/calificaciones.txt por dar un ejemplo 
-     *la funcion regresara un punto a la posicion del ultimo '/' en este caso pero busca cualquier caracter. 
+   
      * 
      * 
-     * ahora la funcion puede regresar 2 cosas como lo vimos, un apuntador o NULL, que significa el NULL? NULL es cuando no encunetra el 
-     * caracter puede significar que el archivo que le mandamos esta en nuestra ruta relaviva podria decirce en nuestro directorio en donde se
-     * encuentra el scrpit por lo que el nombre base del archivo es el mismo que del archivo solo se le hace un casting para convetirlo en su tipo puntero 
-     * 
-     * en otro caso si es una ruta absoluta entonces, queremos solo el nombre del archivo por lo que debemos empezar una posicion despues de lo que
-     * nos dio la funcion para tener el nombre limpio, 4567
-     * 
+     * ahora la funcion puede regresar 2 posibles resultados, NULL o un puntero 
      */
     char *nombre_base = strrchr(nombre_archivo, '/');
     if(nombre_base == NULL){
@@ -194,13 +175,6 @@ int procesar_archivos(const char *nombre_archivo){
 
     //transferir contenido 
     char buffer[4096]; //la cantidad de bytes que se estran escribiendo en cada psada. 
-
-    /**
-     * lo que devulve las funciones read() y write() es el numero de bytes leidos o escritos dependiendo el caso esto lo usaremos para saber 
-     * si no han ocurrido errores al transferir. 
-     * 
-     * 
-     */
     int bytes_leidos, bytes_escritos; 
     
     
@@ -219,7 +193,7 @@ int procesar_archivos(const char *nombre_archivo){
     close(fd_destino);
 
 
-    //siempre y cunado no haya ocurrio un error al escribir el archivo resultara en unn exito el mover el archivo en otro caso mostrara un error, si es exitoso borramos el archivo en la direccion en donde se los paso. 
+    //siempre y cunado no haya ocurrio un error al escribir el archivo resultara en unn exito el mover el archivo en otro caso mostrara un error.
     if(resultado == 0){
         //eliminar el archivo original si la transferencia fue exitosa 
         if(unlink(nombre_archivo)==-1){
