@@ -115,7 +115,8 @@ int main() {
 		 * 
 		 * 
 		 */
-        	args = parse_input(input);
+		//args = parse_input(input);
+
 
 		/**
 		 * una vez teneindo los tokens en hora de saber que es lo que quiere hacer el usuario?
@@ -123,15 +124,13 @@ int main() {
 		 * 
 		 */
 
-       	 	status = procesar_comando(args);
-
-        // Mostrar información del comando (en lugar de ejecutarlo)
-       // print_command_info(args);
-
-        	free(args);
+       		//status = procesar_comando(args);
+		
+       		
+        	//free(args);
 
 		//modificacion para funcionar con pipeline y redireccionamiento 
-		//status = procesar_linea_comadno(input);
+		status = procesar_linea_comadno(input);
 
     }
     return 0;
@@ -173,7 +172,7 @@ char **parse_input(char *line) {
 	 * 
 	 * !!importante -> token va a modificar el parametro "line"
 	 */
-    token = strtok(line, " \t\n\r");
+    token = strtok(line, " \t\n\r|");
     
 	while (token != NULL) {
 		//lo que se hace es recorrer 
@@ -199,8 +198,19 @@ char **parse_input(char *line) {
 
 int procesar_linea_comando(char *line){
 
+	//eliminamos el salto de linea, si se ingresa el salto de linea dejamos que el usuario continue 
+	//usando la shell 
 
+	line[strcspn(line, "\n")] =0; //lo terminamos como nulo 
 	
+
+	if(strlen(line)==0){
+		return 1; //si no ingreso nada muy posiblemente es un error o le dio enter sin querer
+	}
+
+	//verificamos si hay pieline 
+
+	char *pipe = strchr(line, '|');
 
 	return 1;
 }
