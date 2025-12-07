@@ -30,6 +30,10 @@ char **parse_input(char *line);
 int procesar_linea_comando(char *line);
 
 
+//ejecutar piepline 
+int ejecutar_pipeline(char **comandos, int num_comandos);
+
+
 
 /**
  * si la entrada es solo un comando entonces se llamara a esta funcion que solo tendra la tarea 
@@ -115,7 +119,7 @@ int main() {
 		 * 
 		 * 
 		 */
-		args = parse_input(input);
+		//args = parse_input(input);
 
 
 		/**
@@ -124,13 +128,13 @@ int main() {
 		 * 
 		 */
 
-       		status = procesar_comando(args);
+       		//status = procesar_comando(args);
 		
        		
-        	free(args);
+        	//free(args);
 
 		//modificacion para funcionar con pipeline y redireccionamiento 
-		//status = procesar_linea_comadno(input);
+		status = procesar_linea_comadno(input);
 
     }
     return 0;
@@ -210,10 +214,186 @@ int procesar_linea_comando(char *line){
 
 	//verificamos si hay pieline 
 
-	char *pipe = strchr(line, '|');
+	char *pipe_pos = strchr(line, '|');
+	
+
+	if(pipe_pos = NULL){
+	
+	
+		//comando simpre
+		char **args = parse_input(line);
+		int status = procesar_comando(args);
+
+
+		//lberar memoria 
+		//
+		int i=0; 
+		while(args[i]!=NULL){
+		
+			free(args[i]);
+			i++;
+		}
+		free(args);
+	}else{
+		//hay pipe line, al menos 1 pero hay un limite
+		char *comandos[MAX_PIPES];
+		int num_comandos = 0; 
+
+		char *token = strtok(line, "|");
+
+		while(toke !=NULL && num_comandos < MAX_PIPES){
+		
+			//eliminar espacios extras
+			//
+			while(*token=' ') token++;
+
+			char *end = token + strlen(token)-1;
+
+			while(end >  token && *end ==' '){
+			
+				*end = '\0';
+				end--;
+			}
+
+			comandos[num_comandos] = strdup(token);
+			num_comandos++;
+			toke = strtok(NULL, "|");
+		
+		}
+
+		if(num_comandos < 2){
+		
+			fprintf(stderr, "error: pipeline invalido\n");
+
+			for(int i=0; i< num_comandos; i++){
+			
+				free(comandos[i]);
+			}
+
+			return 1;
+			
+		}
+
+		//parsear cada comandos 
+		//
+		char **comandos_args = malloc(num_comandos *sizeof(char**));
+
+		for(int i=0; i< num_comados;i++){
+		
+			comandos_args[i]=parse_input(comandos[i]);
+			free(comandos[i]);
+		}
+
+		//ejecutar pipelines
+		//
+		int resultado = ejecutar_pipeline(comandos_args, num_comandos);
+	
+
+
+		//liberear memoria 
+		//
+		for(int i=0; i< num_comandos; i++){
+		
+			for(int j=0; i<comandos_args[i][j]; i++){
+			
+				free(comandos_args[i][j]);
+			}
+
+			free(comandos_args[i]);
+		
+		}
+
+		free(comandos_args);
+		return resultado;
+
+	}	
+
 
 	return 1;
 }
+
+
+
+int ejecutar_pipeline(char **comandos, int num_comandos){
+
+
+	int pipes[num_comandos-1][2];
+
+	pid_t pids[num_comandos];
+	int i;
+
+	//crear pipes 
+	//
+	for(i=0; i< num_comandos-1;i++){
+	
+		if(pipe(pipes[i])==-1){
+		
+			perror("error creando pipe");
+			return 1;
+		}
+	
+	}
+
+
+	//crear procesos para cada comandos 
+	//
+	for(i=0; i< num_comadnos; i++){
+	
+		pids[i] = fork();
+
+		if(pids[i] == 0){
+			//proceso hijo 
+			//
+			//conectar pipes 
+			//
+			if(i >0){
+			
+				//redirigir entrada desde pipe anteriorr
+				dup2(pipes[i-1][0], STDIN_FILEO);
+			}
+
+			if(i< num_comandos -1){
+				//redirigir salida al pipe actual
+				dup2(pipe[i][1], STDOUT_FILEO);
+			}
+
+			for(int j=0; i<num_comandos-1;j++){
+			
+				close(pipe[j][0]);
+				close(pipes[j][1]);
+			
+			}
+
+			//ejejcutar comando 
+			//
+			retrn ejecutar_comandos_simpre(comandos[i]);
+		
+		
+		}else if(pids[i]<0){
+		
+			perror("error en fork");
+			return 1;
+		}
+
+	
+	}
+
+	//cerrandos todos los pipes en el proceso padre 
+	//
+	for(i=0; i< num_comandos-1; i++){
+	
+		close(pipes[i][0]);
+		close(pipes[i][0]);
+	}
+
+	//esperar a que termine 
+	//
+	for(i=0; i< num_comandos; i++){
+		waitpid(pipes[i],NULL,0);
+	}
+	return 1;
+}
+
 
 
 
