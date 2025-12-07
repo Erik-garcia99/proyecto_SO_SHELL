@@ -14,7 +14,8 @@
 #define MAX_PIPE 10
 
 
-//funciones ]
+//******************funciones principales
+
 
 /***
 *
@@ -25,35 +26,19 @@
 */
 char **parse_input(char *line);
 
-
-
 int procesar_linea_comando(char *line);
-
 
 //ejecutar piepline 
 int ejecutar_pipeline(char **comandos, int num_comandos);
 
-
-
-/**
- * si la entrada es solo un comando entonces se llamara a esta funcion que solo tendra la tarea 
- * de ejecutar un comando simple sin pipeline, tanto dels sitema como los propros y los scripts 
- * 
- * 
- */
-int procesar_comando(char **args);
-
-
-
-
-
-/**
- * 
- * @brief 
- * 
- * 
- */
 int ejecuta_comandos_sistema(char **args);
+
+//************************************************
+
+
+//*************comandos internos y scritps 
+
+int procesar_comando(char **args);
 
 
 
@@ -66,6 +51,12 @@ int cifrado_xor(char **args);
 
 int fantasma_rm(char **args);
 int borrar_rastro(char **args);
+
+//***************funciones auxiliar para dividir pipeline
+
+
+
+
 
 
 
@@ -255,14 +246,15 @@ int procesar_linea_comando(char *line){
 				end--;
 			}
 
-			comandos[num_comandos] = strdup(token);
-			num_comandos++;
-			toke = strtok(NULL, "|");
-		
 		}
 
+
+		comandos[num_comandos] = strdup(token);
+		num_comandos++;
+		toke = strtok(NULL, "|");
+
 		if(num_comandos < 2){
-		
+			
 			fprintf(stderr, "error: pipeline invalido\n");
 
 			for(int i=0; i< num_comandos; i++){
@@ -289,7 +281,6 @@ int procesar_linea_comando(char *line){
 		int resultado = ejecutar_pipeline(comandos_args, num_comandos);
 	
 
-
 		//liberear memoria 
 		//
 		for(int i=0; i< num_comandos; i++){
@@ -307,7 +298,6 @@ int procesar_linea_comando(char *line){
 		return resultado;
 
 	}	
-
 
 	return 1;
 }
@@ -436,95 +426,221 @@ int procesar_comando(char **args){
 	//en caso de no ser un comando local especial o uno de los scripts/comandos 
 	//propios quiere decir que quiere ejeuctar algun otro comando s
 
-	return ejecuta_comandos_sistema(args);
+	return ejecuta_comandos_simple(args);
 }
 
 
 
 //este va a pasar a ser -> procesar_comando_simple
-int ejecuta_comandos_sistema(char **args){
+int ejecuta_comandos_simple(char **args){
 
-	//declaramos variables a utuliza, pid que tomara el id de proceso al ejecutar el comadno fork 
-	pid_t pid;
-	int status;
 
-	//no hay comando, no se ejcuta nada esto puede pasar cunado el usuario ingresa enter
-	if(args[0] == NULL){
-		return 0;
+
+	if(args[0]==NULL){
+	
+		return 1;
 	}
 
-	//creamos proceso hijo, recordando que fork crea un proceso exacto al padre 
-	
-	pid = fork();
+	//verificar si hay redireccionaminetos 
+	//
+	char *input_file =NULL;
+	char *output_file = NULL;
+	int append_mode = 0;
+	int background = 0;
 
-	//en el caso que el proceo creado sea el hijo entonces es cunado se puede crear un proceso 
-	//del comando que el usurio solicito
-	if(pid == 0){
+	//filtrar redirecciones 
+	//
+	char *filtrados[MAX_ARGS];
+	int filtrado_idx=0;
+
+	for(int i=0; args[i] !=NULL && filtrado_idx < MAX_ARGS -1 ;i++){
 	
-		//proceso hijo
-		//funcion para ejecutar cualquier comando del sistema, creacion de un proceso que no sea igual al padre que lo invoco 
-		/**
-		 * la funcion execvp remplaza el proceso hijo crfeado con uno nuevo, en este caso es un proceos 
-		 * que responde al comando en la primera posicion del argumento args[] el cual se busca en el PATH del sistema
-		 * como segundo parametro es toda la lista de argumentos, esto porque si no se pone el comando a ejecutar 
-		 * con sus argumentos la funcion falla y regresa -1 que indica el fallo.
-		 * 
-		 */
+		if(strcmp(args[i], "<")==0){
 		
-		if(execvp(args[0], args)==-1){
-			perror("Error ejecuando comadno");
+			//redireccion de entrada 
+			//
+			if(args[i+1] ==NULL){
+			
+				fprintf(stderr, "ERROR: se necesita un archivo de entrada\n");
+				return 1;
+			}
+			input_file = args[i+1];
+			i++;//saltar el archivo
 		}
 
-		exit(EXIT_FAILURE);
-	}
-	else if(pid<0){
-		//en este caso ocurrio un error al crear el proceso hijo. 
-		perror("error en fork");
+		else if(strcmp(args[i], ">") == 0){
+		
+			//redireccionamoento de salida 
+			//
+			if(args[i+1] == NULL){
+				fprintf(stderr, "ERROR: se necesita un archivo de salida\n");
+				return 1;
+			
+			}
+
+			output_file = args[i+1];
+			append_mode = 0;
+			i++;
+		}
+		else if(strcmp(args[i],">>")==0){
+		
+			if(args[i+1] ==NULL){
+			
+				fprintf(stderr, "ERROR: se necesita un archivo de salida\n");
+				return 1;
+				
+			}
+
+			output_file =args[i+1];
+			append_mode =1;
+			i++;
+		
+		}
+		else if(strcmp(args[i],"&")==0){
+			//ejecucar backgroudn
+			background=1;
+		}
+		else{
+			filtrado[filtrado_idx++]= args[i];
+		}
 	
 	}
-	else{
-		//proceso padre 
-		/**
-		 * estete va a esperar a que el hijo con el pid dado cambie de estado, 
-		 * 
-		 * en este caso que el proceso hijo termiena ya sea por exit() o por una senial.
-		 * 
-		 * el hecho de estar en un ciclo es por si un hijo no ha terminado si no que esta pausado. 
-		 * 
-		 * 
-		 * 
-		 * la opcion WUNTRACED hace que waitpid retrono tambien cunado el hijo este dentenido. 
-		 * 
-		 * en este caso estamso esperando a que el hijo termine por completo 
-		 * 
-		 */
-		do{
+	filtrado[filtrado_idx]=NULL;
+	
 
-			waitpid(pid, &status, 0);
-			
-			//macros que nos ayudan a examinar el estado en el que se encuentra el hijo 
-
-			/**
-			 * lo que esta pasando es que, mientras el hijo no haya terminao normalmente y no haya sido
-			 * terminado por senial, osea sigue esperando mientras el proceco este vivo, detenia o en cualuqier 
-			 * otro estado menos en terminado 
-			 * 
-			 * esta esperando a que termine el hijo
-			 *
-			 *
-			 */
-		}while(!WIFEXITED(status) && !WIFSIGNALED(status));
+	//si no hay cambio despues de filtrar 
+	//
+	if(filtrado[0]==NULL){
+	
+		return 1;
 	}
+
+	//ejecutar comando interno o del sistema 
+	//
+	if(strcmp(filtrado[0], "fantasma-rm")==0){
+		return fantasma-rm(args);				
+				
+	}
+
+	else if(strcmp(filtrado[0], "borrar_rastro")==0){
+	
+		return borrar_rastro(args);
+	}
+	else{
+	
+	
+		pid_t pid;
+		int status
+
+		pid=fork();
+
+		if(pid==0){
+		
+			//proceso hijo 
+			//
+			if(input_file !=NULL){
+			
+				int fd_in = open(input_file, O_RDONLY);
+				if(fd_int < 0){
+				
+					perror("errro al abrir el archivo de entrada");
+					exit(EXIT_FAILURE);
+				}
+				dup2(fd_in, STDIN_FILENO);
+				close(fd_in);
+			
+			}
+
+			//redireccioamineto de salida 
+			//
+			if(output_file !=NULL){
+				int flags = O_WRONLY | O_CREAT;
+				if(append_mode){
+					flags |= O_APPEND;
+				
+				}
+				else{
+				
+					flags |=O_TRUNC;
+				}
+
+				in fd_out = open(outpu_file,flags, 0644);
+				if(fd_out < 0){
+				
+					perror("Error: creando el archivo de salida\n");
+					exit(EXIT_FAILURE);
+				}
+				dup2(fd_out,STDOUT_FILENO);
+				close(fd_out);
+			
+			}
+
+			//ejecutar comando 
+			//
+			if(execvp(filtrado[0], filtrado)==-1){
+			
+				perror("ERROR al ejejcutar el comando");
+			}
+			exit(EXIT_FAILURE);
+		}
+		else if(pid<0){
+		
+			perror("erro en fork");
+			return 1;
+		}
+
+		else{
+		
+			//proceos padre
+			//
+			if(!background){
+			
+				do{
+				
+					waitpid(pid, &status, 0);
+
+				}while(!WIFEXITED(status) && !WIFSIGNALED(status));
+			}else{
+			
+				printf("[%d] ejecutando en background\n", pid);
+			}
+		}
+	}
+
+
+
 
 	return 1;
 
 }
 
-int procesar_redirecciones(char **args){
-
-
-
-
+int procesar_redirecciones_en_comando(char **args, char **input_file, char **output_file, int *append) {
+    *input_file = NULL;
+    *output_file = NULL;
+    *append = 0;
+    
+    // Buscar redirecciones
+    for (int i = 0; args[i] != NULL; i++) {
+        if (strcmp(args[i], "<") == 0 && args[i + 1] != NULL) {
+            *input_file = args[i + 1];
+            args[i] = NULL; // Marcar para ignorar
+            i++; // Saltar el archivo
+        }
+        else if (strcmp(args[i], ">") == 0 && args[i + 1] != NULL) {
+            *output_file = args[i + 1];
+            *append = 0;
+            args[i] = NULL;
+            i++;
+        }
+        else if (strcmp(args[i], ">>") == 0 && args[i + 1] != NULL) {
+            *output_file = args[i + 1];
+            *append = 1;
+            args[i] = NULL;
+            i++;
+        }
+    }
+    
+    return 0;
 }
 
 
@@ -540,123 +656,170 @@ int procesar_redirecciones(char **args){
  * 
  * 
  */
-
-int borrar_rastro(char **args){
-
-	pid_t pid;
-	int status; 
-
-
-
-	//creamos el proceso hijo/padre y cachamos su id de proceso 
-	pid = fork();
-
-	if(pid == 0){
-	
-		//proceso hijo 
-		//construimos el comando, la ruta en donde esta ej ejecutable, el archivo que sera borrado
-		//el arreglo debe terminar con NULL porque asi es necesario para execvp
-		char *new_args[]={"./borrar_rastro/borrar_rastro", args[1], NULL}; 
-
-		/**
-		 * 
-		 * ahora estamos cambinado el proceos creado por el fork al proceso al cual se esta llamando 
-		 * con la direccion del primer indice del arreglo, si todo tiene exito se ejecutara el proceos 
-		 * 
-		 * 
-		 * como es que funciona exevp?
-		 * 
-		 * lo que hace es reemplazar completamente el programa actual por uno nuevo, por lo que las lineas que estan 
-		 * despues de esta llamada no se ejecutan. 
-		 * 
-		 * 
-		 */
-		if(execvp(new_args[0],new_args) == -1){
-		
-			perror("error ejecutando borrar_rastro");
-		}
-		/**
-		 * si la ejecucion execvp falla este va a mostrar en pantalla el mensaje de erro y luego 
-		 * llama a "exit" con la macro estbalceita para terminar, lo cual cerrara todos los descriptores de archivo.
-		 * 
-		 * porque si tiene exito nunca se regresa. 
-		 */
-		exit(EXIT_FAILURE);
-	}
-	else if(pid < 0){
-	
-		perror("error en el fork");
-	}
-	else{
-	
-		//proceso padre 
-		do{
-		
-			waitpid(pid, &status, 0);
-		}while(!WIFEXITED(status) && !WIFSIGNALED(status));
-	}
-
-
-	return 1;
+int borrar_rastro(char **args) {
+    pid_t pid;
+    int status;
+    
+    char *input_file = NULL;
+    char *output_file = NULL;
+    int append = 0;
+    
+    // Hacer copia de args
+    char *args_copia[MAX_ARGS];
+    int i;
+    for (i = 0; args[i] != NULL && i < MAX_ARGS - 1; i++) {
+        args_copia[i] = args[i];
+    }
+    args_copia[i] = NULL;
+    
+    // Procesar redirecciones
+    procesar_redirecciones_en_comando(args_copia, &input_file, &output_file, &append);
+    
+    pid = fork();
+    
+    if (pid == 0) {
+        // Proceso hijo
+        // Aplicar redirecciones
+        if (input_file != NULL) {
+            int fd_in = open(input_file, O_RDONLY);
+            if (fd_in < 0) {
+                perror("Error abriendo archivo de entrada");
+                exit(EXIT_FAILURE);
+            }
+            dup2(fd_in, STDIN_FILENO);
+            close(fd_in);
+        }
+        
+        if (output_file != NULL) {
+            int flags = O_WRONLY | O_CREAT;
+            if (append) {
+                flags |= O_APPEND;
+            } else {
+                flags |= O_TRUNC;
+            }
+            
+            int fd_out = open(output_file, flags, 0644);
+            if (fd_out < 0) {
+                perror("Error creando archivo de salida");
+                exit(EXIT_FAILURE);
+            }
+            dup2(fd_out, STDOUT_FILENO);
+            close(fd_out);
+        }
+        
+        // Construir argumentos para borrar_rastro
+        char *new_args[MAX_ARGS];
+        new_args[0] = "./borrar_rastro/borrar_rastro";
+        int j = 1;
+        
+        for (int k = 1; args_copia[k] != NULL && j < MAX_ARGS - 1; k++) {
+            if (args_copia[k] != NULL && strlen(args_copia[k]) > 0) {
+                new_args[j++] = args_copia[k];
+            }
+        }
+        new_args[j] = NULL;
+        
+        // Ejecutar borrar_rastro
+        execvp(new_args[0], new_args);
+        perror("Error ejecutando borrar_rastro");
+        exit(EXIT_FAILURE);
+    }
+    else if (pid < 0) {
+        perror("Error en fork");
+        return 1;
+    }
+    else {
+        // Proceso padre
+        do {
+            waitpid(pid, &status, 0);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+    
+    return 1;
 }
 
-
-
-int fantasma_rm(char **args){
-
-	pid_t pid; 
-	int status; 
-
-	pid = fork();
-
-	if(pid == 0){
-	
-		//proceso hijo 
-		//
-		char *new_args[MAX_ARGS]; //arreglo que sera el que le pasaremos a la funcio excecvp para crear el proceso 
-
-		//copiar arguemntos adicionales
-		if(args[1] != NULL){
-			//aqui solo le estamos pasando los demas archivos que seran ocultados en el sistrema 
-			int i=1;
-			new_args[0]="./fantasma-rm/fantasma-rm";
-			while(args[i] != NULL && MAX_ARGS -1){
-				new_args[i] = args[i];
-				i++;
-			
-			}
-
-			new_args[i]=NULL;
-		}
-
-		//se crea el proceso de fantasma 
-		if(execvp(new_args[0], new_args)==-1){
-		
-			perror("error ejecutando fantasma-rm");
-		}
-
-		exit(EXIT_FAILURE);
-	}
-	else if(pid < 0){
-		perror("error en fork");
-		
-	}
-	else{
-
-		//proceso padre
-
-		do{
-			//esperando que el hijo termine.
-			waitpid(pid, &status, 0);
-
-		}while(!WIFEXITED(status) && !WIFSIGNALED(status));
-
-	}
-	return 1;
-
+int fantasma_rm(char **args) {
+    pid_t pid;
+    int status;
+    
+    char *input_file = NULL;
+    char *output_file = NULL;
+    int append = 0;
+    
+    // Hacer copia de args para no modificar el original
+    char *args_copia[MAX_ARGS];
+    int i;
+    for (i = 0; args[i] != NULL && i < MAX_ARGS - 1; i++) {
+        args_copia[i] = args[i];
+    }
+    args_copia[i] = NULL;
+    
+    // Procesar redirecciones
+    procesar_redirecciones_en_comando(args_copia, &input_file, &output_file, &append);
+    
+    pid = fork();
+    
+    if (pid == 0) {
+        // Proceso hijo
+        // Aplicar redirecciones
+        if (input_file != NULL) {
+            int fd_in = open(input_file, O_RDONLY);
+            if (fd_in < 0) {
+                perror("Error abriendo archivo de entrada");
+                exit(EXIT_FAILURE);
+            }
+            dup2(fd_in, STDIN_FILENO);
+            close(fd_in);
+        }
+        
+        if (output_file != NULL) {
+            int flags = O_WRONLY | O_CREAT;
+            if (append) {
+                flags |= O_APPEND;
+            } else {
+                flags |= O_TRUNC;
+            }
+            
+            int fd_out = open(output_file, flags, 0644);
+            if (fd_out < 0) {
+                perror("Error creando archivo de salida");
+                exit(EXIT_FAILURE);
+            }
+            dup2(fd_out, STDOUT_FILENO);
+            close(fd_out);
+        }
+        
+        // Construir argumentos para fantasma-rm (sin redirecciones)
+        char *new_args[MAX_ARGS];
+        new_args[0] = "./fantasma-rm/fantasma-rm";
+        int j = 1;
+        
+        // Copiar solo los argumentos que no son redirecciones
+        for (int k = 1; args_copia[k] != NULL && j < MAX_ARGS - 1; k++) {
+            if (args_copia[k] != NULL && strlen(args_copia[k]) > 0) {
+                new_args[j++] = args_copia[k];
+            }
+        }
+        new_args[j] = NULL;
+        
+        // Ejecutar fantasma-rm
+        execvp(new_args[0], new_args);
+        perror("Error ejecutando fantasma-rm");
+        exit(EXIT_FAILURE);
+    }
+    else if (pid < 0) {
+        perror("Error en fork");
+        return 1;
+    }
+    else {
+        // Proceso padre
+        do {
+            waitpid(pid, &status, 0);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+    
+    return 1;
 }
-
-
 
 
 //%%%%%%%%%%%%%%%%5comadnos%%%%%%%%%%%%%%%%%%%%55
