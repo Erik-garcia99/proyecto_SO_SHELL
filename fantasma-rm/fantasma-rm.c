@@ -33,7 +33,7 @@ int main(int argc, char *argv[]){
         return 0;
     }
 	
-    //procesar los archiva via entrada estandar como puede ser con un pipeline 
+
     char buffer[BUFFER_SIZE];
     int archivos_procesados = 0;
 
@@ -67,46 +67,36 @@ void crear_directorio_fantasma(){
 	
 	char padre[]=".andormeda_shell/\n";//este es solo para imprimir 
 
+    
 	// -> /home/dmrx/.andromeda_shell/ -> tratare de crear primero
 	int n=snprintf(path_F, sizeof(path_F), "%s%s", getenv("HOME"), GHOSTZONE_BASE_FATHER);
-
+	
 	if(mkdir(path_F, 0700) == 0){
         
-<<<<<<< HEAD
-        write(1,exito,strlen(exito));
-        write(1,padre,strlen(padre));
-	    write(1,"\n",1);
-   
-=======
        		write(1,exito,strlen(exito));
         	write(1,padre,strlen(padre));
 		write(1,"\n",1);
-        //write(1,lf, strlen(lf));
-        //hasta este punteo solo se ha creado el sigueinte sirectorio si es que tiene exito 
->>>>>>> Erik
-        // -> /home/dmrx/.andromeda_shell/ <- este es el directorio creado si todo ha salido bien. 
+
 
 
 	}
 	else if (errno == EEXIST){
-        //verificando que no exista 
 
-	}
 	else{
-        //otro tipo de error
+        	//otro tipo de error
 		perror("error al crear la carpeta padre");
-    	write(1,"\n",1);
+    		write(1,"\n",1);
 
 	}
 
 
 	//ahora debemos de crear desntro de la carpeta .andromeda_shell -> .ghostzone/
     char directorio_oct[]=".ghostzone/";
-        //por ahora se que path_F contiene la ruta hasta .andromeda_shell, 
+
     strcat(path_F, directorio_oct);
 
 	//en este momento el arreglo path_F tiene la sigueinte rua: /home/dmrx/.andormeda_shell/.ghostzone/ 
-
+    // puts(path_F);
 
 	if(mkdir(path_F,0700)==0){
 
@@ -131,24 +121,11 @@ void crear_directorio_fantasma(){
 
 
 int procesar_archivos(const char *nombre_archivo){
-    
-    //la funcion lo access comprueba si en el proceso en el que se hace la llamada al sistema puede acceder a la ruta del archivo que se le paso
-    //utilizando el modo "F_OK" solo se quiere saber si existe el archivo
+     
     if(access(nombre_archivo, F_OK)==-1){
         fprintf(stderr, "Error archivo %s no existe\n", nombre_archivo);
         return -1;
     }
-
-
-    /**
-     * se le esta diciendo que queremos saber en donde esta el ultimo '/' esto porque?
-     * nuestro shell tiene que tener la posibilidad de darle una ruta absoluta, entonces una ruta absolita lo que contendra seria 
-     * /home/usuer/docuemntos/calificaciones.txt por dar un ejemplo 
-   
-     * 
-     * 
-     * ahora la funcion puede regresar 2 posibles resultados, NULL o un puntero 
-     */
     char *nombre_base = strrchr(nombre_archivo, '/');
     if(nombre_base == NULL){
         nombre_base = (char *)nombre_archivo;
@@ -161,31 +138,22 @@ int procesar_archivos(const char *nombre_archivo){
     char ruta_destino[1024]; // -> /home/user/.andromeda_shell/.ghostzone/achivo.a
     snprintf(ruta_destino, sizeof(ruta_destino),"%s%s%s", getenv("HOME"), GHOSTZONE_BASE, nombre_base);
 
-    //abrir archivo original 
-    //la funcion open reotrna el valor del descriptor el cual es un numero entreo, en el caso que que este falle rregresarea -1
-    //entonces lo que aqui se esta haceindo es abrir el archivo original el cual se paso por
+
     int fd_original = open(nombre_archivo, O_RDONLY);
     if(fd_original == -1){
         perror("error abriendo el archivo origen");
         return -1;
     }
-
-    //crear archivo fantasma
-    //abrimos o creamos el archivo en la ruta en donde se va a escbir los datos del archivo que 
-    //indicamos que se cree si no existe, en solo lectura si existe se trinca a 0 bytes su contenido, y solo el otroga permidos de lectrua y 
-    //escritura para el duenio 
+ 
     int fd_destino = open(ruta_destino, O_WRONLY | O_CREAT | O_TRUNC, 0600);
     if(fd_destino == -1){
         perror("error al crear archivo fantasma");
         close(fd_original);
         return -1;
     }
-
-    //proceso para transferir archivos. 
-
-
-    //transferir contenido 
+ 
     char buffer[4096]; //la cantidad de bytes que se estran escribiendo en cada psada. 
+
     int bytes_leidos, bytes_escritos; 
     
     
@@ -204,7 +172,7 @@ int procesar_archivos(const char *nombre_archivo){
     close(fd_destino);
 
 
-    //siempre y cunado no haya ocurrio un error al escribir el archivo resultara en unn exito el mover el archivo en otro caso mostrara un error.
+ 
     if(resultado == 0){
         //eliminar el archivo original si la transferencia fue exitosa 
         if(unlink(nombre_archivo)==-1){

@@ -7,8 +7,6 @@
 #include <sys/types.h>  
 #include <errno.h>
 
-// #define DB_FILE  ".andromeda_shell/.verificador/.integrity.db"
-// #define DB_TMP   ".andromeda_shell/.verificador/.integrity.db.tmp"
 #define BUFFER_SIZE 4096
 //creacion de una caprtea donde se guardara la db de vetificador 
 #define verificador_padre "/.andromeda_shell/" 
@@ -156,9 +154,8 @@ int leer_linea(int fd, char *buffer, int max_len) {
     int i = 0;
     char c;
     while (i < max_len - 1) {
-        //lee 1 byte del archivo fd y lo estara guardando en &c
+
         int n = read(fd, &c, 1);
-        //si n es el fin del archivo regresa 0 o si el archivo se corrompio 
         if (n <= 0) {
             if (i == 0) return 0;
             break;
@@ -170,7 +167,6 @@ int leer_linea(int fd, char *buffer, int max_len) {
     }
     //se agrega un caracter nulo al final para que el string sea valido 
     buffer[i] = '\0';
-    //retornamos 1 para indicar que se leyo con exito la linea 
     return 1;
 }
 
@@ -186,7 +182,7 @@ unsigned long hash_file(const char *filename) {
 
     //
     while ((bytes_read = read(fd, buffer, BUFFER_SIZE)) > 0) {
-        //multiplicamos por 33 el hash le sumamos el hasg y al final le sumamos el byte del buffer que son los 4KB leidos del archivo al cual se le implemetna este algoritmo 
+        
         for (int i = 0; i < bytes_read; i++) {
             hash = ((hash << 5) + hash) + buffer[i];
         }
@@ -196,7 +192,7 @@ unsigned long hash_file(const char *filename) {
     return hash; //regresamos el hash creado 
 }
 
-//la funcion a buscar dentro de la ruta actual en donde se enuentre si hay un archivo hash creado.
+
 unsigned long obetner_hash_previo(const char *target_file) {
     // va a abrir la rura en donde se guardan los hash 
     int fd = open(RUTA_DB, O_RDONLY);
@@ -208,18 +204,12 @@ unsigned long obetner_hash_previo(const char *target_file) {
     unsigned long found_hash = 0; //bandera que indica que se encontro la base de datos. 
 
     while (leer_linea(fd, line, sizeof(line))) {
-        // Parseamos la línea en memoria
-        // Formato: nombre hash
-        //lo que esta buscando es la ultima ocurrencian enter el nombre y un eapcios esto separa el nombre del archivo con el hash 
         char *ptr_hash = strrchr(line, ' ');
         //solo entrara aqui hasta que se haya leido el nombre completo 
         if (ptr_hash) {
             *ptr_hash = '\0';//separamos el nombre del hash
             ptr_hash++;       //se avanza al numero 
             if (strcmp(line, target_file) == 0) {
-                //compara el nombre con el de la linea del hash 
-                //si lo enceuntra 
-                //convetirmos el string a un unsigned long 
                 found_hash = strtoul(ptr_hash, NULL, 10);
                 break;
             }
@@ -228,3 +218,4 @@ unsigned long obetner_hash_previo(const char *target_file) {
     close(fd);
     return found_hash;
 }
+
