@@ -53,6 +53,7 @@ int verificador_integridad(char **args);
 int fantasma_rm(char **args);
 int borrar_rastro(char **args);
 
+//en la funcion main se toma el dato en crudo del usuarios 
 int main() {
 
 	//buffer para guardar lo que ingresa el usaurio, todo lo que e usuario esbrime en la linea de comando, mas no guarda token o otra cosa garda crudo 
@@ -81,6 +82,9 @@ int main() {
             break;
         }
 
+        //esta es la funcion que decidira si ejecutara el comandos como un comandos simple que no teien pipeline pero puede tener redireccionamineto de memoria. 
+
+        //o tiene pipelines por lo que es otro proceso para conectar los comandos 
         status = procesar_linea_comando(input);
     }
     return 0;
@@ -118,15 +122,17 @@ char **parse_input(char *line) {
     token = strtok(line, " \t\n\r");
     
     while (token != NULL) {
-        //lo que se hace es recorrer
-        tokens[position] = strdup(token); //guarda el punetro de es asubcadena. 
+        //guarda el punetro de es asubcadena. 
+        //lo que hace es guardar uan copia identica e independiete de una cadena de texto en una nueva ubicacion de memoria. 
+        //recordar librerar la memoria puesto que strdup hace uso de malloc internamnete 
+        tokens[position] = strdup(token); 
         position++;
 
         if (position >= MAX_ARGS) {
             break;
         }
 		/**
-		 * cunado se le pasa un parametro NULL en la sigueinte lectrua se lele una copia almacenada 
+		 * cunado se le pasa un parametro NULL en la sigueinte lectrua se lee una copia almacenada 
 		 * del ultimo parametro de strin1 no nulo -> devuelve puntero al sigueinte token e la lista. 
 		*/
 
@@ -141,8 +147,7 @@ char **parse_input(char *line) {
 
 int procesar_linea_comando(char *line) {
 
-	//eliminamos el salto de linea 
-	//
+	//va a buscar el salto de linea y lo reemplazara con el caracter nulo 
     line[strcspn(line, "\n")] = 0;
 	
 
@@ -161,17 +166,20 @@ int procesar_linea_comando(char *line) {
 		//genera los tokens de la solicitud del usuario
         char **args = parse_input(line);
 		//dentro de una lista verifica si es un comando interno del sistema o un comando externo personalizado o creado por el usuario, dependiendo si el comando se realizo con exito o no regresa si se sale o sigue el programa. 
+
+        //aqui ya regreso la lista de tokens que solicito el usuario estos son comandos que no hacen uso del pipeline 
         int status = procesar_comando(args);
 
         //liberamos la memoria 
         int i = 0;
         while(args[i] != NULL) {
-            free(args[i]);
+            free(args[i]); //eliminando los espacios creados pro strdup
             i++;
         }
-        free(args);
+        free(args); //elimina la lsita que guardaba donde estaban las palabras 
         return status;
     } else {
+        
         //hay pipelines por lo que hay comandos a ejecutar 
         char *comandos[MAX_PIPES];
 
@@ -179,7 +187,7 @@ int procesar_linea_comando(char *line) {
 
 		
         char linea_copia[MAX_INPUT];
-		//trabajmao con una varbale auxiliar para no alterar la linea original. 
+		//trabajmao con una varbale auxiliar para no alterar la linea original, porque recordemos que strtok altera la cadena original agregnado '/0' al final de cada token.
 		strcpy(linea_copia, line);
         //tratamos de separar los comandos o lo que se va a relizar entre los pipelines. 
         char *token = strtok(linea_copia, "|");
@@ -188,8 +196,12 @@ int procesar_linea_comando(char *line) {
             while(*token == ' ') token++;
             
             // elimina espacios al final
+
+            //ubicamos el cursor al final del token 
             char *end = token + strlen(token) - 1;
+            //camia hacia atras mientras siga dentro de la cadena y la posicion en donde esta sea un espacio en balnco
             while(end > token && *end == ' ') {
+                //remplaza por caracter nulo y retorcede
                 *end = '\0';
                 end--;
             }
@@ -217,7 +229,14 @@ int procesar_linea_comando(char *line) {
 		//creamos un arreglo tridimencional, esto porque ahora estoy diviendo por token los token creados de los diferentes comandos enlazados por un pipeline. 
         char ***comandos_args = malloc(num_comandos * sizeof(char**));
         for(int i = 0; i < num_comandos; i++) {
-			//tenemos el arregl con los comandos con archivos algunso que queremos relizar por lo que ahora los necesitamso tokenisar para obtener que es lo que el usuario quiere , 
+			//tenemos el arregl con los comandos con archivos algunso que queremos relizar por lo que ahora los necesitamso tokenisar para obtener que es lo que el usuario quiere ,
+            
+            /**
+             * por ejemplo en este punto se podria tener 
+             * 
+             * ["echo texto_prueba.txt", "grep -n", "fantasma-rm"] por dar un ejemplo pero ahora se necesitan separar esos comandos en los tokens que execvp va a poder procesar para crear el proceso 
+             * 
+             */
             comandos_args[i] = parse_input(comandos[i]);
 			//libera la cadena de comando cruda
             free(comandos[i]);
@@ -240,6 +259,19 @@ int procesar_linea_comando(char *line) {
     }
 }
 
+/**
+ * funcion dup2(oldFile, newFile);
+ * 
+ * lo que le dice al SO que hafa que newFile sea una copia exacta del oldFile 
+ * ahora ambos apuntana al recurso de oldFile
+ * 
+ * esta funcion es importante para la creacion de redireccionamineto y pipelines 
+ * 
+ * 
+ * 
+ * 
+ * 
+ */
 
 
 int ejecutar_pipeline(char ***comandos, int num_comandos) {
@@ -265,7 +297,7 @@ int ejecutar_pipeline(char ***comandos, int num_comandos) {
         }
     }
 
-    //dependineo de cuantos procesos creamos ese total de procesos 
+    //dependineo de cuantos comandos creamos ese total de procesos 
     for(i = 0; i < num_comandos; i++) {
 		//creamos un proceso el cual es el mismo a este que lo esta llamando 
         pids[i] = fork();
@@ -275,7 +307,7 @@ int ejecutar_pipeline(char ***comandos, int num_comandos) {
             //conectar pipes
 			//si no SOY el primer comando necesito leer del anterior 
             if(i > 0) {
-               
+            
 				//la funcion dup2 toma el extremo de la lectra del pipe anterior y lo conecta a la entrada entandar de este proceso. 
                 dup2(pipes[i-1][0], STDIN_FILENO);
             }
@@ -294,6 +326,12 @@ int ejecutar_pipeline(char ***comandos, int num_comandos) {
             }
 
             //se ejecuta el comando real 
+            /**
+             * lo que esta pasando es que ahora ya se puede tener la conexion 
+             * entre los comandos entre uno escirbe al otro mas adelante y el mas adelante lee lo que escrbiio el que esta mas atras 
+             * 
+             *
+             */
             ejecuta_comandos_simple(comandos[i]);
             /**
 			 * si execvp falla o la funcion regresa, terminamos el hijo con exito para no delar proceso zombes duplicados de la shell
