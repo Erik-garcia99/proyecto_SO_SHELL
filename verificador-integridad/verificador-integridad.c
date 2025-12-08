@@ -1,107 +1,230 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <fcntl.h>      
+#include <unistd.h>     
+#include <stdlib.h>  
+#include <string.h>    
+#include <stdio.h>   
+#include <sys/stat.h> 
+#include <sys/types.h>  
+#include <errno.h>
 
-#define DB_FILE ".integrity.db"
-#define MAX_LINE 2048
+// #define DB_FILE  ".andromeda_shell/.verificador/.integrity.db"
+// #define DB_TMP   ".andromeda_shell/.verificador/.integrity.db.tmp"
+#define BUFFER_SIZE 4096
+//creacion de una caprtea donde se guardara la db de vetificador 
+#define verificador_padre "/.andromeda_shell/" 
+#define verificador_final ".verificador/"
+#define TAM_RUTA_BASE 2048
+#define TAM_RUTA_FINAL 2100
+char RUTA_DB[TAM_RUTA_BASE];
+char RUTA_DB_TMP[TAM_RUTA_FINAL];
 
-// Función simple de hash (DJB2) para evitar dependencias complejas como OpenSSL
-// Suma byte por byte para crear una firma única del archivo.
-unsigned long hash_file(const char *filename) {
-    FILE *f = fopen(filename, "rb");
-    if (!f) return 0;
 
-    unsigned long hash = 5381;
-    int c;
+void print_msg(const char *msg);
+int leer_linea(int fd, char *buffer, int max_len);
+unsigned long hash_file(const char *filename);
+unsigned long obetner_hash_previo(const char *target_file);
+void crear_directorio_verificador();
 
-    while ((c = fgetc(f)) != EOF) {
-        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-    }
-
-    fclose(f);
-    return hash;
-}
-
-// Busca el hash previo de un archivo en la base de datos
-unsigned long get_previous_hash(const char *target_file) {
-    FILE *db = fopen(DB_FILE, "r");
-    if (!db) return 0;
-
-    char line[MAX_LINE];
-    char name[1024];
-    unsigned long stored_hash;
-    unsigned long found_hash = 0;
-
-    while (fgets(line, sizeof(line), db)) {
-        // Formato esperado: NOMBRE_ARCHIVO HASH
-        sscanf(line, "%s %lu", name, &stored_hash);
-        if (strcmp(name, target_file) == 0) {
-            found_hash = stored_hash;
-            break;
-        }
-    }
-    fclose(db);
-    return found_hash;
-}
 
 int main(int argc, char *argv[]) {
+    //verifica que se le hayan ingresao correcto lso parametro 
     if (argc < 2) {
-        fprintf(stderr, "Uso: verificador-integridad <archivo1> <archivo2> ...\n");
+        char *msg = "Uso: verificador-integridad <archivo1> <archivo2> ...\n";
+        write(STDERR_FILENO, msg, strlen(msg));
         return 1;
     }
 
-    // Abrimos la DB antigua para leer y creamos una temporal para el nuevo estado
-    // Esto cumple con el requisito de "Cada ejecución genera un archivo de sumas" 
-    FILE *new_db = fopen(DB_FILE ".tmp", "w");
-    if (!new_db) {
-        perror("Error creando base de datos temporal");
+    crear_directorio_verificador();
+
+    //Crear/Truncar archivo temporal con permisos 0644 (rw-r--r--) del estado actual de los archivos 
+    int fd_new = open(RUTA_DB_TMP, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (fd_new < 0) {
+        char *err = "Error creando base de datos temporal\n";
+        write(STDERR_FILENO, err, strlen(err));
         return 1;
     }
 
-    // Si existe la DB anterior, la mantenemos para comparar, si no, se asume primera ejecución.
-    FILE *old_db_check = fopen(DB_FILE, "r");
-    int first_run = (old_db_check == NULL);
-    if (old_db_check) fclose(old_db_check);
+    //verifica si existe la basde de datos, solo verifica mas no hace nada con ella 
+    int fd_old = open(RUTA_DB, O_RDONLY);
+    int first_run = (fd_old < 0);
+    if (fd_old >= 0) close(fd_old);
 
-    printf("=== Verificador de Integridad ===\n");
-    if(first_run) printf("[INFO] Primera ejecución: Creando base de datos de integridad.\n");
 
     int alertas = 0;
+    char out_buf[1024]; //buffer para formatear mensajes de salida
 
-    // Procesar cada archivo pasado como argumento
     for (int i = 1; i < argc; i++) {
         char *filename = argv[i];
+        //calcula el hash actial
         unsigned long current_hash = hash_file(filename);
-
+        //control de errores si no existe no el archivo o no se puede ller
         if (current_hash == 0) {
-            printf("[-] %s: Error al leer archivo (o no existe).\n", filename);
+            sprintf(out_buf, "%s: Error al leer archivo.\n", filename);
+            print_msg(out_buf);
             continue;
         }
 
-        // Guardamos el nuevo estado en la DB temporal
-        fprintf(new_db, "%s %lu\n", filename, current_hash);
+        //formatea y guARDA EN LA BASE DE DATOs temporal 
+        int len = sprintf(out_buf, "%s %lu\n", filename, current_hash);
+        write(fd_new, out_buf, len);
 
         if (!first_run) {
-            unsigned long prev_hash = get_previous_hash(filename);
+            //si no es la primera vez que que se ingresa a la db el archivo buscamos su hash del pasado 
+            unsigned long prev_hash = obetner_hash_previo(filename);
             
+
             if (prev_hash == 0) {
-                printf("[+] %s: NUEVO archivo registrado.\n", filename);
+                sprintf(out_buf, "%s: nuevo archivo registrado.\n", filename);
+                print_msg(out_buf);
+                //compara el hash calculado con el previo en la DB antrior para verificar si es diferentes 
             } else if (current_hash != prev_hash) {
-                printf("[!] %s: ALERTA DE INTEGRIDAD - El archivo fue modificado.\n", filename);
+                sprintf(out_buf, "%s: ARCHIVO MODIFICADO!.\n", filename);
+                print_msg(out_buf);
                 alertas++;
             } else {
-                printf("[OK] %s: Verificado correctamente.\n", filename);
+                //no ha camibado el archivo 
+                sprintf(out_buf, "%s: Verificado.\n", filename);
+                print_msg(out_buf);
             }
         } else {
-            printf("[+] %s: Registrado en DB.\n", filename);
+            //si es la priemra vez no hay con que comparar 
+            sprintf(out_buf, "%s: Registrado.\n", filename);
+            print_msg(out_buf);
+        }
+    }
+    //se cierra el archivo temporal 
+    close(fd_new);
+
+    unlink(RUTA_DB); //borramos la DB vieja 
+    rename(RUTA_DB_TMP, RUTA_DB);//renombranos la temperotal para que se la oficial 
+
+    return alertas > 0 ? 1 : 0;
+}
+
+
+void crear_directorio_verificador(){
+    
+    char path_F[TAM_RUTA_BASE];
+    
+    char exito[]="se ha creado el directorio con exito!";
+    char padre[]=".andromeda_shell/ creado o existente\n";
+    
+    //construir ruta al padre: /home/user/.andromeda_shell/
+    snprintf(path_F, sizeof(path_F), "%s%s", getenv("HOME"), verificador_padre);
+    
+    //intentar crear padre
+    if(mkdir(path_F, 0700) == 0){
+        write(1, exito, strlen(exito));
+        write(1, "\n", 1);
+    }
+    else if (errno == EEXIST){
+        // Ya existe, no pasa nada, continuamos
+    }
+    else{
+        perror("Error al crear la carpeta padre");
+    }
+
+    //construir ruta final: /home/user/.andromeda_shell/.verificador/
+    //path_F ya tiene la ruta padre, le concatenamos al hijo
+    strcat(path_F, verificador_final);
+
+    // Intentar crear carpeta final
+    if(mkdir(path_F, 0700) == 0){
+        write(1, exito, strlen(exito));
+        write(1, verificador_final, strlen(verificador_final));
+        write(1, "\n", 1);
+    }
+    else if(errno == EEXIST){
+        // Ya existe, está bien.
+    }
+    else{
+        perror("Error al crear el directorio verificador");
+    }
+
+    snprintf(RUTA_DB, sizeof(RUTA_DB), "%s.integrity.db", path_F);
+    snprintf(RUTA_DB_TMP, sizeof(RUTA_DB_TMP), "%s.integrity.db.tmp", path_F);
+}
+
+//escribe en pantalla 
+void print_msg(const char *msg) {
+    write(STDOUT_FILENO, msg, strlen(msg));
+}
+
+//vamos a leer linea por byte por byte del archivo 
+
+int leer_linea(int fd, char *buffer, int max_len) {
+    int i = 0;
+    char c;
+    while (i < max_len - 1) {
+        //lee 1 byte del archivo fd y lo estara guardando en &c
+        int n = read(fd, &c, 1);
+        //si n es el fin del archivo regresa 0 o si el archivo se corrompio 
+        if (n <= 0) {
+            if (i == 0) return 0;
+            break;
+        }
+        //verificando si hay salto de linea cortar 
+        if (c == '\n') break;
+        //guaramos el byte en el buffer 
+        buffer[i++] = c;
+    }
+    //se agrega un caracter nulo al final para que el string sea valido 
+    buffer[i] = '\0';
+    //retornamos 1 para indicar que se leyo con exito la linea 
+    return 1;
+}
+
+//funcion HASH del algoritmos djb2 
+//
+unsigned long hash_file(const char *filename) {
+    int fd = open(filename, O_RDONLY);
+    if (fd < 0) return 0;
+
+    unsigned long hash = 5381;
+    char buffer[BUFFER_SIZE];
+    int bytes_read;
+
+    //
+    while ((bytes_read = read(fd, buffer, BUFFER_SIZE)) > 0) {
+        //multiplicamos por 33 el hash le sumamos el hasg y al final le sumamos el byte del buffer que son los 4KB leidos del archivo al cual se le implemetna este algoritmo 
+        for (int i = 0; i < bytes_read; i++) {
+            hash = ((hash << 5) + hash) + buffer[i];
         }
     }
 
-    fclose(new_db);
+    close(fd); //cerramos el descritops 
+    return hash; //regresamos el hash creado 
+}
 
-    // Actualizamos la base de datos real con la temporal
-    remove(DB_FILE);
-    rename(DB_FILE ".tmp", DB_FILE);
+//la funcion a buscar dentro de la ruta actual en donde se enuentre si hay un archivo hash creado.
+unsigned long obetner_hash_previo(const char *target_file) {
+    // va a abrir la rura en donde se guardan los hash 
+    int fd = open(RUTA_DB, O_RDONLY);
+    if (fd < 0) return 0;
 
-    return alertas > 0 ? 1 : 0;
+    //va a estar letedno 1kbye por 1kbyte 
+    char line[1024];
+    char name[512];
+    unsigned long found_hash = 0; //bandera que indica que se encontro la base de datos. 
+
+    while (leer_linea(fd, line, sizeof(line))) {
+        // Parseamos la línea en memoria
+        // Formato: nombre hash
+        //lo que esta buscando es la ultima ocurrencian enter el nombre y un eapcios esto separa el nombre del archivo con el hash 
+        char *ptr_hash = strrchr(line, ' ');
+        //solo entrara aqui hasta que se haya leido el nombre completo 
+        if (ptr_hash) {
+            *ptr_hash = '\0';//separamos el nombre del hash
+            ptr_hash++;       //se avanza al numero 
+            if (strcmp(line, target_file) == 0) {
+                //compara el nombre con el de la linea del hash 
+                //si lo enceuntra 
+                //convetirmos el string a un unsigned long 
+                found_hash = strtoul(ptr_hash, NULL, 10);
+                break;
+            }
+        }
+    }
+    close(fd);
+    return found_hash;
 }
