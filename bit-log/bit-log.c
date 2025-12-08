@@ -9,7 +9,9 @@
 //define la ruta del archivo de log 
 #define LOGPATH "%s/.andromeda_shell/system.bitlog"
 
+//toma un numero entero grande (v) de 64 bits y lo parte en 8 pedacitos para guardarlos en al arrglo b 
 void w64(unsigned char *b, unsigned long long v){
+    //
     for(int i=0;i<8;i++) b[i]=v>>(i*8);
 }
 unsigned long long r64(unsigned char *b){
@@ -33,7 +35,7 @@ int main(int c,char *v[]){
     char *h=getenv("HOME")?getenv("HOME"):".";
     char log[512];
     snprintf(log,512,LOGPATH,h);
-    mkdir(strcat(strcpy((char[512]){},h),"/.crypto_shell"),0700);
+    mkdir(strcat(strcpy((char[512]){},h),"/.andromeda_shell"),0700);
 
     if(!strcmp(v[1],"record") && c>=5){
         int fd=open(log,O_WRONLY|O_CREAT|O_APPEND,0600);
