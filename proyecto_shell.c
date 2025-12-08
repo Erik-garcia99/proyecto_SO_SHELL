@@ -49,9 +49,6 @@ int procesar_redirecciones_en_comando(char **args, char **input_file, char **out
 int comando_xor(char **args);
 int verificador_integridad(char **args);
 
-<<<<<<< HEAD
-
-
 
 /**
  * 
@@ -73,12 +70,8 @@ int cifrado_xor(char **args);
 int fantasma_rm(char **args);
 int borrar_rastro(char **args);
 
+int bit_log(char **args);
 
-
-
-
-
-=======
 // script
 int fantasma_rm(char **args);
 int borrar_rastro(char **args);
@@ -97,7 +90,6 @@ int main() {
     printf("Escribe 'exit' para salir\n\n");
 
     while (status) {
-<<<<<<< HEAD
 		char cwd[1024];
 		//obetenemos el directorio actual,
 		//esta funcion asgina en el buffer cwd el directorio acutla en donde se enceuntra 
@@ -110,17 +102,6 @@ int main() {
 			//posiblemente causas de permisos. 
 			printf("+++> ");
 		}
-=======
-
-        char cwd[1024];
-        //obetenemos lla direccion actual en donde se encuentra el usuarios 
-        if(getcwd(cwd, sizeof(cwd)) != NULL) {
-            printf("%s >> ", cwd);
-        } else {
-			//si ocurre un error se muestra el promrp de apoyo indicando que ocurrio un errro al obtener la direccion, sera como el "pwd"
-            printf("+++> ");
-        }
->>>>>>> Erik
 
         fflush(stdout);
 		//capturamos la entrada y lo guardamos en el buffer
@@ -128,7 +109,6 @@ int main() {
             break;
         }
 
-<<<<<<< HEAD
 		//leer la entrad:
 
 		/**
@@ -148,24 +128,17 @@ int main() {
 		 * 
 		 */
 
-       		status = procesar_comando(args);
+       	    status = procesar_comando(args);
 		
        		
         	free(args);
 
 		//modificacion para funcionar con pipeline y redireccionamiento 
 		//status = procesar_linea_comadno(input);
-=======
-        //esta es la funcion que decidira si ejecutara el comandos como un comandos simple que no teien pipeline pero puede tener redireccionamineto de memoria. 
-
-        //o tiene pipelines por lo que es otro proceso para conectar los comandos 
-        status = procesar_linea_comando(input);
->>>>>>> Erik
     }
     return 0;
 }
 
-<<<<<<< HEAD
 
 /**
  * genrear los tokens para la proceso de comandos
@@ -177,8 +150,6 @@ int main() {
  */
 
 
-=======
->>>>>>> Erik
 char **parse_input(char *line) {
 
 	//indica el indice en dodne se ingresaran los tokens en la lista.
@@ -204,10 +175,6 @@ char **parse_input(char *line) {
 	/**
 	 * !!importante -> token va a modificar el parametro "line"
 	 */
-<<<<<<< HEAD
-=======
-
->>>>>>> Erik
     token = strtok(line, " \t\n\r");
     
     while (token != NULL) {
@@ -220,22 +187,10 @@ char **parse_input(char *line) {
         if (position >= MAX_ARGS) {
             break;
         }
-<<<<<<< HEAD
 		
         token = strtok(NULL, " \t\n\r");
     }
 	//la cadena de token lo terminamos con NULL porqeu las funciones que trabajan con los procesos esperan que 
-=======
-		/**
-		 * cunado se le pasa un parametro NULL en la sigueinte lectrua se lee una copia almacenada 
-		 * del ultimo parametro de strin1 no nulo -> devuelve puntero al sigueinte token e la lista. 
-		*/
-
-        token = strtok(NULL, " \t\n\r");
-    }
-    //la cadena de token lo terminamos con NULL porqeu las funciones que trabajan con los procesos esperan que 
-	//la lista termine con NULL 
->>>>>>> Erik
     tokens[position] = NULL;
     return tokens;
 }
@@ -281,7 +236,6 @@ int procesar_linea_comando(char *line) {
 
         int num_comandos = 0;
 
-<<<<<<< HEAD
 
 
 int procesar_comando(char **args){
@@ -386,64 +340,6 @@ int ejecuta_comandos_sistema(char **args){
 
 		}while(!WIFEXITED(status) && !WIFSIGNALED(status));
 	}
-=======
-		
-        char linea_copia[MAX_INPUT];
-		//trabajmao con una varbale auxiliar para no alterar la linea original, porque recordemos que strtok altera la cadena original agregnado '/0' al final de cada token.
-		strcpy(linea_copia, line);
-        //tratamos de separar los comandos o lo que se va a relizar entre los pipelines. 
-        char *token = strtok(linea_copia, "|");
-        while(token != NULL && num_comandos < MAX_PIPES) {
-            // eliminaos espacios al inicio
-            while(*token == ' ') token++;
-            
-            // elimina espacios al final
-
-            //ubicamos el cursor al final del token 
-            char *end = token + strlen(token) - 1;
-            //camia hacia atras mientras siga dentro de la cadena y la posicion en donde esta sea un espacio en balnco
-            while(end > token && *end == ' ') {
-                //remplaza por caracter nulo y retorcede
-                *end = '\0';
-                end--;
-            }
-            //Si el comando no esta vacio después de limpiar los espacios
-            if(strlen(token) > 0) {
-				//guarda una copia del comando 
-                comandos[num_comandos] = strdup(token);
-                num_comandos++;
-            }
-			//llama a strtok para obtnener el sigueinte tokendespes de la sigueinte '|'
-            token = strtok(NULL, "|");
-        }
-
-		//verificar que haya al menos 2 comandos para poder considerar un piprline correcto 
-        if(num_comandos < 2) {
-			//si no es asi marcada un error y limpa la memoria 
-            fprintf(stderr, "error: pipeline invalido\n");
-            for(int i = 0; i < num_comandos; i++) {
-                free(comandos[i]);
-            }
-            return 1;
-        }
-
-        // parsear el comando, 
-		//creamos un arreglo tridimencional, esto porque ahora estoy diviendo por token los token creados de los diferentes comandos enlazados por un pipeline. 
-        char ***comandos_args = malloc(num_comandos * sizeof(char**));
-        for(int i = 0; i < num_comandos; i++) {
-			//tenemos el arregl con los comandos con archivos algunso que queremos relizar por lo que ahora los necesitamso tokenisar para obtener que es lo que el usuario quiere ,
-            
-            /**
-             * por ejemplo en este punto se podria tener 
-             * 
-             * ["echo texto_prueba.txt", "grep -n", "fantasma-rm"] por dar un ejemplo pero ahora se necesitan separar esos comandos en los tokens que execvp va a poder procesar para crear el proceso 
-             * 
-             */
-            comandos_args[i] = parse_input(comandos[i]);
-			//libera la cadena de comando cruda
-            free(comandos[i]);
-        }
->>>>>>> Erik
 
         //ejecutar pipeline
 		//llamar a la funcion prnicpal que crea los pipes, hace fork y dup2
@@ -462,7 +358,6 @@ int ejecuta_comandos_sistema(char **args){
     }
 }
 
-<<<<<<< HEAD
 int procesar_redirecciones(char **args){
 
 
@@ -476,21 +371,6 @@ int procesar_redirecciones(char **args){
 
 //scripts 
 
-=======
-/**
- * funcion dup2(oldFile, newFile);
- * 
- * lo que le dice al SO que hafa que newFile sea una copia exacta del oldFile 
- * ahora ambos apuntana al recurso de oldFile
- * 
- * esta funcion es importante para la creacion de redireccionamineto y pipelines 
- * 
- * 
- * 
- * 
- * 
- */
->>>>>>> Erik
 
 
 int ejecutar_pipeline(char ***comandos, int num_comandos) {
@@ -521,26 +401,6 @@ int ejecutar_pipeline(char ***comandos, int num_comandos) {
 		//creamos un proceso el cual es el mismo a este que lo esta llamando 
         pids[i] = fork();
 
-<<<<<<< HEAD
-		if(execvp(new_args[0],new_args) == -1){
-		
-			perror("error ejecutando borrar_rastro");
-		}
-		exit(EXIT_FAILURE);
-	}
-	else if(pid < 0){
-	
-		perror("error en el fork");
-	}
-	else{
-	
-		//proceso padre 
-		do{
-		
-			waitpid(pid, &status, 0);
-		}while(!WIFEXITED(status) && !WIFSIGNALED(status));
-	}
-=======
         if(pids[i] == 0) {
             //proceso hijo
             //conectar pipes
@@ -557,7 +417,6 @@ int ejecutar_pipeline(char ***comandos, int num_comandos) {
 				//asi que o que imprimra el comando ira hacia el pipe
                 dup2(pipes[i][1], STDOUT_FILENO);
             }
->>>>>>> Erik
 
             //ya una vez que se apico la funcion dup2 ya tenemos todas nuestras conexiones listas, debemos cerrar todos los descriptores heredados para evadir figas y bloqueos 
             for(int j = 0; j < num_comandos - 1; j++) {
@@ -630,6 +489,10 @@ int procesar_comando(char **args) {
 
 	if(strcmp(args[0], "verificador-integridad") == 0) {
         return verificador_integridad(args);
+    }
+
+    if(strcmp(args[0], "bit-log") == 0) {
+        return bit_log(args);
     }
 
     return ejecuta_comandos_simple(args);
@@ -716,13 +579,20 @@ int ejecuta_comandos_simple(char **args) {
     //ejecutar comandos internos 
     if(strcmp(filtrados[0], "fantasma-rm") == 0) {
         return fantasma_rm(args);
-    } else if(strcmp(filtrados[0], "borrar_rastro") == 0) {
+    } 
+    else if(strcmp(filtrados[0], "borrar_rastro") == 0) {
         return borrar_rastro(args);
-    } else if(strcmp(filtrados[0], "comando_xor") == 0) {
+    } 
+    else if(strcmp(filtrados[0], "comando_xor") == 0) {
         return comando_xor(args);
-    } else if(strcmp(filtrados[0], "verificador-integridad") == 0){
+    } 
+    else if(strcmp(filtrados[0], "verificador-integridad") == 0){
 		return verificador_integridad(args);
-	}else {
+	}
+    else if(strcmp(filtrados[0], "bit-log") == 0){
+        return bit_log(args);
+    }
+    else {
         //ejecucion de comandos del sistem 
         pid_t pid;
         int status;
@@ -818,9 +688,9 @@ int procesar_redirecciones_en_comando(char **args, char **input_file, char **out
 			args[i] = NULL;
             i++; //satamos al nombre de archivo del bucle 
 
-			//detectamos si hay salid 
+			//detectamos si hay salida
         } else if(strcmp(args[i], ">") == 0 && args[i + 1] != NULL) {
-			//garfamos el nombre
+			//agarramos el nombre
             *output_file = args[i + 1];
             *append = 0; //asigmaos el modo de salida 
             args[i] = NULL; //terminamos la lista aqui 
@@ -838,16 +708,16 @@ int procesar_redirecciones_en_comando(char **args, char **input_file, char **out
 
 
 
-
+//solo acepta de 1 en 1 archivo 
 int borrar_rastro(char **args) {
     pid_t pid;
     int status;
-    
+    //inicamos varibales por si el docuemntos conteine redireccionamiento 
     char *input_file = NULL;
     char *output_file = NULL;
-    int append = 0;
+    int append = 0; //modo de escrutura si es que lo tiene 
     
-    // Hacer copia de args
+    //hacemos una copia de args, esto porque la funcion de procesar_reidrecciones va a modificiar el arreglo original.
     char *args_copia[MAX_ARGS];
     int i;
     for (i = 0; args[i] != NULL && i < MAX_ARGS - 1; i++) {
@@ -855,24 +725,26 @@ int borrar_rastro(char **args) {
     }
     args_copia[i] = NULL;
     
-    // Procesar redirecciones
+    //procesamos redirecciones 
     procesar_redirecciones_en_comando(args_copia, &input_file, &output_file, &append);
     
     pid = fork();
     
     if (pid == 0) {
-        // Proceso hijo
-        // Aplicar redirecciones
+        //proceso hijo
+        //si el usuario pidio leer de un archivo entonces abrumos el archivo 
         if (input_file != NULL) {
             int fd_in = open(input_file, O_RDONLY);
             if (fd_in < 0) {
                 perror("Error abriendo archivo de entrada");
                 exit(EXIT_FAILURE);
             }
+            //desconectamos el teclado y conecamos al archivo abierto a la entrada estar del proceso 
             dup2(fd_in, STDIN_FILENO);
             close(fd_in);
         }
         
+        //en la salida primoer debemos veriifcar que tipo de banderas y de escirutra quera, si agregar al final ">>" o truncar todo y escibir con los nuevos datos">"
         if (output_file != NULL) {
             int flags = O_WRONLY | O_CREAT;
             if (append) {
@@ -880,21 +752,22 @@ int borrar_rastro(char **args) {
             } else {
                 flags |= O_TRUNC;
             }
-            
+            //abre o crea el archivo asignando los permisos para el usurio y solo de lectrua para grupo y otros 
             int fd_out = open(output_file, flags, 0644);
             if (fd_out < 0) {
                 perror("Error creando archivo de salida");
                 exit(EXIT_FAILURE);
             }
+            //conectamos la salida de pantalla al archivo
             dup2(fd_out, STDOUT_FILENO);
             close(fd_out);
         }
         
-        // Construir argumentos para borrar_rastro
+        //argumentos del para el programa externo 
         char *new_args[MAX_ARGS];
         new_args[0] = "./borrar_rastro/borrar_rastro";
         int j = 1;
-        
+        //copiamos los argumentos limpios 
         for (int k = 1; args_copia[k] != NULL && j < MAX_ARGS - 1; k++) {
             if (args_copia[k] != NULL && strlen(args_copia[k]) > 0) {
                 new_args[j++] = args_copia[k];
@@ -912,7 +785,7 @@ int borrar_rastro(char **args) {
         return 1;
     }
     else {
-        // Proceso padre
+        //esperoa a que el hijo termine una vez hecho eso la shell toma el control 
         do {
             waitpid(pid, &status, 0);
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
@@ -921,7 +794,6 @@ int borrar_rastro(char **args) {
     return 1;
 }
 
-<<<<<<< HEAD
 int cifrado_xor(char **args){
 
 
@@ -972,7 +844,9 @@ int cifrado_xor(char **args){
 
 
 
-=======
+//puede procesar mas de 1 archivo 
+//los demas comandos trabajan de manera muy similar 
+
 int fantasma_rm(char **args) {
     pid_t pid;
     int status;
@@ -981,7 +855,7 @@ int fantasma_rm(char **args) {
     char *output_file = NULL;
     int append = 0;
     
-    // Hacer copia de args para no modificar el original
+    
     char *args_copia[MAX_ARGS];
     int i;
     for (i = 0; args[i] != NULL && i < MAX_ARGS - 1; i++) {
@@ -1094,7 +968,6 @@ int verificador_integridad(char **args) {
     char *output_file = NULL;
     int append = 0;
     
-    // 1. Hacer copia de args para no modificar el original al buscar redirecciones
     char *args_copia[MAX_ARGS];
     int i;
     for (i = 0; args[i] != NULL && i < MAX_ARGS - 1; i++) {
@@ -1102,15 +975,12 @@ int verificador_integridad(char **args) {
     }
     args_copia[i] = NULL;
     
-    // 2. Procesar redirecciones (detectar <, >, >>)
     procesar_redirecciones_en_comando(args_copia, &input_file, &output_file, &append);
     
     pid = fork();
     
     if (pid == 0) {
-        // --- Proceso Hijo ---
         
-        // Configurar redirección de entrada
         if (input_file != NULL) {
             int fd_in = open(input_file, O_RDONLY);
             if (fd_in < 0) {
@@ -1121,7 +991,7 @@ int verificador_integridad(char **args) {
             close(fd_in);
         }
         
-        // Configurar redirección de salida
+        
         if (output_file != NULL) {
             int flags = O_WRONLY | O_CREAT;
             if (append) {
@@ -1129,7 +999,7 @@ int verificador_integridad(char **args) {
             } else {
                 flags |= O_TRUNC;
             }
-            // Permisos 0644 (rw-r--r--)
+            //0644 (rw-r--r--)
             int fd_out = open(output_file, flags, 0644);
             if (fd_out < 0) {
                 perror("Error creando archivo de salida");
@@ -1139,13 +1009,10 @@ int verificador_integridad(char **args) {
             close(fd_out);
         }
         
-        // 3. Construir argumentos para el ejecutable externo
-        // La estructura de tu proyecto sugiere que el binario está en una subcarpeta
         char *new_args[MAX_ARGS];
         new_args[0] = "./verificador-integridad/verificador";
         int j = 1;
         
-        // Copiar los argumentos limpios (sin los símbolos de redirección)
         for (int k = 1; args_copia[k] != NULL && j < MAX_ARGS - 1; k++) {
             if (strlen(args_copia[k]) > 0) {
                 new_args[j++] = args_copia[k];
@@ -1153,7 +1020,88 @@ int verificador_integridad(char **args) {
         }
         new_args[j] = NULL;
         
-        // 4. Ejecutar el comando externo
+        execvp(new_args[0], new_args);
+        
+        //si execvp falla
+        fprintf(stderr, "Error: No se encontró el ejecutable en %s\n", new_args[0]);
+        perror("execvp");
+        exit(EXIT_FAILURE);
+    }
+    else if (pid < 0) {
+        perror("Error en fork");
+        return 1;
+    }
+    else {
+        do {
+            waitpid(pid, &status, 0);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+    
+    return 1;
+}
+
+int bit_log(char **args) {
+    pid_t pid;
+    int status;
+    
+    char *input_file = NULL;
+    char *output_file = NULL;
+    int append = 0;
+    
+    
+    char *args_copia[MAX_ARGS];
+    int i;
+    for (i = 0; args[i] != NULL && i < MAX_ARGS - 1; i++) {
+        args_copia[i] = args[i];
+    }
+    args_copia[i] = NULL;
+    
+    procesar_redirecciones_en_comando(args_copia, &input_file, &output_file, &append);
+    
+    pid = fork();
+    
+    if (pid == 0) {
+
+        
+        if (input_file != NULL) {
+            int fd_in = open(input_file, O_RDONLY);
+            if (fd_in < 0) {
+                perror("Error abriendo archivo de entrada");
+                exit(EXIT_FAILURE);
+            }
+            dup2(fd_in, STDIN_FILENO);
+            close(fd_in);
+        }
+        
+        if (output_file != NULL) {
+            int flags = O_WRONLY | O_CREAT;
+            if (append) flags |= O_APPEND;
+            else flags |= O_TRUNC;
+            
+            int fd_out = open(output_file, flags, 0644);
+            if (fd_out < 0) {
+                perror("Error creando archivo de salida");
+                exit(EXIT_FAILURE);
+            }
+            dup2(fd_out, STDOUT_FILENO);
+            close(fd_out);
+        }
+        
+        
+        char *new_args[MAX_ARGS];
+        
+        new_args[0] = "./bit-log/bit-log"; 
+        
+        int j = 1;
+        
+        for (int k = 1; args_copia[k] != NULL && j < MAX_ARGS - 1; k++) {
+            if (strlen(args_copia[k]) > 0) {
+                new_args[j++] = args_copia[k];
+            }
+        }
+        new_args[j] = NULL;
+        
+        
         execvp(new_args[0], new_args);
         
         // Si execvp falla:
@@ -1166,7 +1114,7 @@ int verificador_integridad(char **args) {
         return 1;
     }
     else {
-        // --- Proceso Padre ---
+        
         do {
             waitpid(pid, &status, 0);
         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
@@ -1174,4 +1122,3 @@ int verificador_integridad(char **args) {
     
     return 1;
 }
->>>>>>> Erik

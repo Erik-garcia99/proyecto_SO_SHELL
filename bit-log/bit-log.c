@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 //define la ruta del archivo de log 
-#define LOGPATH "%s/.crypto_shell/system.bitlog"
+#define LOGPATH "%s/.andromeda_shell/system.bitlog"
 
 void w64(unsigned char *b, unsigned long long v){
     for(int i=0;i<8;i++) b[i]=v>>(i*8);
