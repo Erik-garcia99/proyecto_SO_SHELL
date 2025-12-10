@@ -324,11 +324,10 @@ int copiar_borrar(const char *origen, const char *destino){
         return -1;
     }
 
-    //proceso para transferir archivos. 
 
 
    
-    char buffer[4096]; //la cantidad de bytes que se estran escribiendo en cada psada. 
+    char buffer[4096];  
     int bytes_leidos, bytes_escritos; 
     
     
