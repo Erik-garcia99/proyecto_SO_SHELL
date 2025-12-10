@@ -1,3 +1,12 @@
+/*
+garcia chavez erik  01275863
+Armando Tepale Chocolat  1280222
+Sistemas operativos 2025-2
+proyecto <adromeda_shell>
+ingenieria en computacion 
+UABC
+*/
+
 #include <fcntl.h>      
 #include <unistd.h>     
 #include <stdlib.h>  
@@ -23,6 +32,10 @@ unsigned long hash_file(const char *filename);
 unsigned long obetner_hash_previo(const char *target_file);
 void crear_directorio_verificador();
 
+//funciones para crear directorios y mover del directorio original al que el usuario haya querido ingresar o al que esta como base 
+int mover_recursivo(const char *origen, const char *destino);
+int copiar_borrar(const char *origen, const char *destino);
+
 
 int main(int argc, char *argv[]) {
     //verifica que se le hayan ingresao correcto lso parametro 
@@ -31,8 +44,68 @@ int main(int argc, char *argv[]) {
         write(STDERR_FILENO, msg, strlen(msg));
         return 1;
     }
-
+    //lo crea igual 
     crear_directorio_verificador();
+
+    //////////////////////////
+    //este comando deberia de poder crear una carpeta con la infromacion de un archivo o de archivos dentro de una carpeta
+
+    /*
+    lo mismo pero con un archivo -> carpeta perosnalizada 
+
+    una carpeta con archivos y puede que mas carpetas a la ruta/archivo base declarada en las macros y el la funcion que la crea 
+    
+    */
+
+
+    // char *destino_personal=NULL;
+
+	// int count_argc = argc;
+	// char **list_argv = malloc(argc * sizeof(char*));
+
+    // //buscara el parametro -d indicando que se manda a una carpeta 
+    // for(int i=0; i< count_argc;i++){
+    //     list_argv[i]= argv[i];
+    // }
+
+    // for(int i=0; i< count_argc ;i++){
+	
+	// 	if(strcmp(list_argv[i], "-d")==0){
+		
+	// 		if(i+1 < count_argc){
+			
+	// 			destino_personal= list_argv[i+1];
+
+	// 			if(mkdir(destino_personal, 0700)==0){
+	// 				list_argv[i] = NULL; //-d se elimina
+	// 			    list_argv[i+1] =NULL; // la ruta se elimina 
+	// 			    i++;
+                    
+	// 			}
+
+    //             else if(errno ==EEXIST){
+    //                 //el directroiro ya existe
+    //             }
+    //             else{
+    //                 perror("error creando el directorio personal"); 
+	// 				return 1;
+    //             }
+
+				
+	// 		}
+	// 		else{
+			
+	// 			fprintf(stderr, "se espera un nombre de directorio\n");
+	// 			return 1;
+	// 		}
+		
+	// 	}
+	
+	// }
+
+    ////////////////////////////////
+
+
 
     //Crear/Truncar archivo temporal con permisos 0644 (rw-r--r--) del estado actual de los archivos 
     int fd_new = open(RUTA_DB_TMP, O_WRONLY | O_CREAT | O_TRUNC, 0644);

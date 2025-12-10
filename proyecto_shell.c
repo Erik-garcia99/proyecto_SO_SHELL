@@ -1,3 +1,11 @@
+/*
+garcia chavez erik  01275863
+Armando Tepale Chocolat  1280222
+Sistemas operativos 2025-2
+proyecto <adromeda_shell>
+ingenieria en computacion 
+UABC
+*/
 
 
 #include <stdio.h>
@@ -12,6 +20,8 @@
 #define MAX_ARGS 64
 #define MAX_PIPES 10  
 
+//lo agregamos como varibale global para compartir entre las 2 diferentres funciones que necesitan la ruta 
+char HOME_SHELL[1024];
 //******************funciones principales
 
 
@@ -26,7 +36,7 @@ char **parse_input(char *line);
 
 int procesar_linea_comando(char *line);
 
-int ejecutar_pipeline(char ***comandos, int num_comandos);  // CORREGIDO: char ***
+int ejecutar_pipeline(char ***comandos, int num_comandos); 
 
 int ejecuta_comandos_simple(char **args);
 
@@ -49,6 +59,14 @@ int main() {
 	//buffer para guardar lo que ingresa el usaurio
     char input[MAX_INPUT];
 
+
+	//es lo mismo solo que lo tendre que hacer 2 veces para obtener la ruta actual en este instante para volver 
+	//
+	if(getcwd(HOME_SHELL, sizeof(HOME_SHELL))==NULL){
+		perror("error al obtener la ruta home\n");
+	}
+
+
 	//estatus para verificar si seguir o salir de la shell 
     int status = 1;
 
@@ -56,6 +74,7 @@ int main() {
     printf("Escribe 'exit' para salir\n\n");
 
     while (status) {
+	
 
         char cwd[1024];
         //obetenemos lla direccion actual en donde se encuentra el usuarios 
@@ -108,7 +127,11 @@ char **parse_input(char *line) {
 }
 
 
-int procesar_linea_comando(char *line) { 
+int procesar_linea_comando(char *line) {
+
+	//va a buscar el salto de linea y lo reemplazara con el caracter nulo 
+    //no posdri hacer MAX_INPUT-1 que podria teorizar qque estara en \n pero no porque no sabamos de que tamanio es lo que ingreso el usuario 
+    //por eso usamos esa funcion que devuelve el indice esto es importante 
     line[strcspn(line, "\n")] = 0;
 	
 
@@ -120,7 +143,6 @@ int procesar_linea_comando(char *line) {
     char *pipe_pos = strchr(line, '|');
     
     if(pipe_pos == NULL) {
-		  
         // comando simple
 		
         char **args = parse_input(line);
@@ -270,37 +292,56 @@ int ejecutar_pipeline(char ***comandos, int num_comandos) {
 }
 
 int procesar_comando(char **args) {
-    if(args[0] == NULL) {
-        return 1;
-    }
+	if(args[0] == NULL) {
+        	return 1;
+	}
 
-    if(strcmp(args[0], "exit") == 0) {
-        printf("saliendo del sistema\n");
-        return 0;
-    }
+    	if(strcmp(args[0], "exit") == 0) {
+        	printf("saliendo del sistema\n");
+        	return 0;
+    	}
+
+    	if(strcmp(args[0], "cd")==0){
+		if(args[1]==NULL){
+		
+			if(chdir(HOME_SHELL)!=0){
+				perror("error para ir al home");
+			}
+		}
+		else{
+		
+			if(chdir(args[1])!=0){
+				perror("shell");
+			}
+		}
+
+		return 1;//para que la shell siga corriendo 
+	
+	}
+
     
-    if(strcmp(args[0], "borrar_rastro") == 0) {
-        return borrar_rastro(args);
-    }
+    	if(strcmp(args[0], "borrar_rastro") == 0) {
+        	return borrar_rastro(args);
+    	}
 
-    if(strcmp(args[0], "fantasma-rm") == 0) {
-        return fantasma_rm(args);
-    }
+    	if(strcmp(args[0], "fantasma-rm") == 0) {
+        	return fantasma_rm(args);
+    	}
 
 	//comandos 
-    if(strcmp(args[0], "comando_xor") == 0) {
-        return comando_xor(args);
-    }
+    	if(strcmp(args[0], "comando_xor") == 0) {
+        	return comando_xor(args);
+    	}
 
 	if(strcmp(args[0], "verificador-integridad") == 0) {
-        return verificador_integridad(args);
-    }
+        	return verificador_integridad(args);
+    	}
 
-    if(strcmp(args[0], "bit-log") == 0) {
-        return bit_log(args);
-    }
+    	if(strcmp(args[0], "bit-log") == 0) {
+        	return bit_log(args);
+    	}
 
-    return ejecuta_comandos_simple(args);
+    	return ejecuta_comandos_simple(args);
 }
 
 //procesar comandos que no tengan pipelines
