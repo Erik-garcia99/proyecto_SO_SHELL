@@ -1,7 +1,20 @@
+/*
+garcia chavez erik  01275863
+Armando Tepale Chocolat  1280222
+Sistemas operativos 2025-2
+proyecto <adromeda_shell>
+ingenieria en computacion 
+UABC
+*/
 
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <errno.h>
+#include <string.h>
+
+
+
 
 int main(int argc, char *argv[]) {
 
@@ -83,15 +96,7 @@ int main(int argc, char *argv[]) {
         
         //debe de escirbir todo el archivo por lo que no sabemos cunato es por lo que lo indicamos en un ciclo while
         while (restante > 0) {
-            //preguntamos si el restante es mayor a los 4KB a escirbir si es asi, entonces asignamos los 4KB 
-            //si no asignamos lo que resta a escribir 
-            int bloque = (restante > 4096) ? 4096 : restante;
-            //va a lleer el total de bytes que dados por bloque del archivo random, los guardara en el buffer
-            read(random, buffer, bloque);
-            //estos mismos bytes leidos los escribimos en el archivo que se esta haciendo el proceso de limpiar 
-            write(fd, buffer, bloque);
-            //vamos restando los 4KB al peso total del archivo
-            restante -= bloque;
+            
         }
         //con esta funcion nos aseguramos que se vacie el cahce del kernel al disco fisico sin estos los datos 
         //podrian quedarse en RAM. 

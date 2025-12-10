@@ -1,3 +1,12 @@
+/*
+garcia chavez erik  01275863
+Armando Tepale Chocolat  1280222
+Sistemas operativos 2025-2
+proyecto <adromeda_shell>
+ingenieria en computacion 
+UABC
+*/
+
 #include<stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
