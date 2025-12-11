@@ -7,6 +7,64 @@ ingenieria en computacion
 UABC
 */
 
+
+
+/**
+ * ashora mismo el comando tiene 2 cuestiones 
+ * 
+ * -> poder verificar directorios y su contenidos - este como lo hara? 
+ *      puede ser algo recursivo como con fantasma solo que aqui 
+ *      es necesario leer el contenido de cada archivo registrar 
+ *      su contenio con el algoritmo hash, pero tambien se deberia
+ *      de registrar el directorio mismo para saber si se borro algo
+ *      o se ingreso un nuevo archivo 
+ * 
+ * -> 
+ * 
+ * /////////////////////////////////////////
+ * 
+ * -> el comando deberia de ser capaz de registrar este contenido dentro
+ *      de un archivo en una ruta base definida en las macros o dentro 
+ *      de un archivo/carpeta especificada por el usuario puede estar
+ *      dentro de directorio actual que se esta ejecutando el comando 
+ *      desde una ruta especificada. 
+ * 
+ * //////////////////////proceso 
+ * 
+ * -> si el archivo a verificar es un directorios: 
+ * 
+ *      si es un directorio este va a recorrer el directorio 
+ *      recursivamente esto para llegar a todos los directorios y \
+ *      archivos, entonces deberia de leer el contenido aplicar el
+ *      algoritmo hash y guardarlo en la ruta destino 
+ *      
+ *      formato que podria mostrar el conteinod 
+ *      (hace referencia a como se mostrara dentro del archivo los 
+ *      nombres de los archivos )
+ * 
+ *      -> si es un directorio al cual mandaremos la infromacion
+ *      $ verificador-integridad archivos/ -f archivos_firmados
+ *      
+ *      archivos/ es un directorios en el cual puede tener n cantidades
+ *      de directorios y n cantidad de archivos que va a verificar su integridad 
+ *      
+ *      entonces cunado se tiene un directorio que se va a firmar, creo que debe
+ *      de indicar la ruta en donde esta el archivo para saber el archivo
+ *      
+ *      pero la cosa es como verificar la carpeta la integridad de esta puede ser
+ *      igual a como se hace un archivo?
+ * 
+ *      entonces se puede guardar el archivo en un archivo que ya esta creado base 
+ *      o en un archivo que el usaurio indique, una carpeta no porque al final 
+ *      este genera un archivo con un reporte
+ *      
+ * 
+ *  
+ * 
+ */
+
+
+
 #include <fcntl.h>      
 #include <unistd.h>     
 #include <stdlib.h>  
@@ -30,84 +88,80 @@ void print_msg(const char *msg);
 int leer_linea(int fd, char *buffer, int max_len);
 unsigned long hash_file(const char *filename);
 unsigned long obetner_hash_previo(const char *target_file);
-void crear_directorio_verificador();
+void crear_directorio_verificador(); //directorio por default
 
 //funciones para crear directorios y mover del directorio original al que el usuario haya querido ingresar o al que esta como base 
+
+//########tal vez tengan que ser modificadas para este comando
 int mover_recursivo(const char *origen, const char *destino);
 int copiar_borrar(const char *origen, const char *destino);
-
+int procesar_archivos(const char *nombre_archivo, const char *destino_personal);
 
 int main(int argc, char *argv[]) {
     //verifica que se le hayan ingresao correcto lso parametro 
     if (argc < 2) {
-        char *msg = "Uso: verificador-integridad <archivo1> <archivo2> ...\n";
+        char *msg = "uso: verificador-integridad <archivo1> <archivo2> ...\n";
         write(STDERR_FILENO, msg, strlen(msg));
         return 1;
     }
-    //lo crea igual 
+    //el directorio destino siempre se intenta crear se vaya a guardan en el o no
     crear_directorio_verificador();
 
     //////////////////////////
-    //este comando deberia de poder crear una carpeta con la infromacion de un archivo o de archivos dentro de una carpeta
+    /**
+     * 
+     * este comando no crea carpetas crea un archivo con un informe de la integridad
+     * de los archivos dentro de una carpeta, de un archivos <si es posible de la misma carpeta>
+     * 
+     * 
+     */
+    //lo dejare de la misa manera porque este puede ser una carpeta o un archivo 
+    char *destino_personal=NULL;
 
-    /*
-    lo mismo pero con un archivo -> carpeta perosnalizada 
-
-    una carpeta con archivos y puede que mas carpetas a la ruta/archivo base declarada en las macros y el la funcion que la crea 
-    
-    */
-
-
-    // char *destino_personal=NULL;
-
-	// int count_argc = argc;
-	// char **list_argv = malloc(argc * sizeof(char*));
-
-    // //buscara el parametro -d indicando que se manda a una carpeta 
-    // for(int i=0; i< count_argc;i++){
-    //     list_argv[i]= argv[i];
-    // }
-
-    // for(int i=0; i< count_argc ;i++){
-	
-	// 	if(strcmp(list_argv[i], "-d")==0){
+    //este es el caso que lo que quiere verificar es un directorio 
+    for(int i=0; i<argc ;i++){
+        
+		if(strcmp(argv[i], "-f")==0){
 		
-	// 		if(i+1 < count_argc){
-			
-	// 			destino_personal= list_argv[i+1];
-
-	// 			if(mkdir(destino_personal, 0700)==0){
-	// 				list_argv[i] = NULL; //-d se elimina
-	// 			    list_argv[i+1] =NULL; // la ruta se elimina 
-	// 			    i++;
-                    
-	// 			}
-
-    //             else if(errno ==EEXIST){
-    //                 //el directroiro ya existe
-    //             }
-    //             else{
-    //                 perror("error creando el directorio personal"); 
-	// 				return 1;
-    //             }
-
+			if(i+1 < count_argc){
+                //toma el nombre del archivo al que se enviaran los datos 
+				destino_personal = argv[i+1];
+                argv[i]=NULL;//elimnaos la bandera -f
+                argv[i+1]=NULL; //eliminamos el nombre del archivo
 				
-	// 		}
-	// 		else{
+			}
+			else{
 			
-	// 			fprintf(stderr, "se espera un nombre de directorio\n");
-	// 			return 1;
-	// 		}
+				fprintf(stderr, "se espera un nombre de directorio\n");
+				return 1;
+			}
 		
-	// 	}
+		}
+        else{
+            //es un archivo o directoiro a procesar 
+        }
 	
-	// }
+	}
+
+    //el usuario eligio un archivo de salida 
+    if(argc > 1){
+
+
+    }
+
+
+
+
+
+
 
     ////////////////////////////////
 
 
 
-    //Crear/Truncar archivo temporal con permisos 0644 (rw-r--r--) del estado actual de los archivos 
+    
+
+    //esta parte tien que ir en otra funcion esta solo esta encargada de los archivos 
     int fd_new = open(RUTA_DB_TMP, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd_new < 0) {
         char *err = "Error creando base de datos temporal\n";
@@ -143,6 +197,8 @@ int main(int argc, char *argv[]) {
             //si no es la primera vez que que se ingresa a la db el archivo buscamos su hash del pasado 
             unsigned long prev_hash = obetner_hash_previo(filename);
             
+
+            //esta parte deberia de ser modificada para cunado se esta tratando de un directorio o un archivo ordinario, con el cual se pueda hacer redireccionamineto si el usurio aparte quiere guardar el historial de este proceso. 
 
             if (prev_hash == 0) {
                 sprintf(out_buf, "%s: nuevo archivo registrado.\n", filename);
@@ -290,5 +346,16 @@ unsigned long obetner_hash_previo(const char *target_file) {
     }
     close(fd);
     return found_hash;
+}
+
+
+//nuevas funciones o funciones modificadas
+
+int procesar_archivos(const char *nombre_archivo, const char *destino_personal){
+
+    
+
+
+
 }
 

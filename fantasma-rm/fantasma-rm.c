@@ -31,7 +31,8 @@ int procesar_archivos(const char *nombre_archivo, const char *destino_personal);
 //funciones par apoder trbajar con con carpetas
 int mover_recursivo(const char *origen, const char *destino);
 int copiar_borrar(const char *origen, const char *destino);
-
+//funcion auxiliar 
+void print_msg(const char *msg);
 
 
 int main(int argc, char *argv[]){
@@ -62,19 +63,14 @@ int main(int argc, char *argv[]){
 			
 				destino_personal= list_argv[i+1];
 
-				if(mkdir(destino_personal, 0700)==0){
+				if(mkdir(destino_personal, 0700)==0 || errno == EEXIST){
 					list_argv[i] = NULL; //-d se elimina
 				    list_argv[i+1] =NULL; // la ruta se elimina 
 				    i++;
-                    
-				}
-
-                else if(errno ==EEXIST){
-                    //el directroiro ya existe
                 }
                 else{
-                    perror("error creando el directorio personal"); 
-					return 1;
+                    perror("erro al crear/acceder al directorio personal");
+                    return 1;
                 }
 
 				
@@ -193,11 +189,28 @@ void crear_directorio_fantasma(){
 
 
 int procesar_archivos(const char *nombre_archivo, const char *destino_personal){ 
-    if(access(nombre_archivo, F_OK)==-1){
-        fprintf(stderr, "Error archivo %s no existe\n", nombre_archivo);
-        return -1;
+
+    struct stat info;
+    //para saber si el archivo existe y es un archivo regular 
+    if(stat(nombre_archivo, &info) < 0){
+        char mess[]="la ruta no existe o no se puede acceder";
+        print_msg(mess);
+    }
+    
+    char nombre_limpio[1024];
+    strncpy(nombre_limpio,nombre_archivo,sizeof(nombre_limpio));
+    nombre_limpio[sizeof(nombre_limpio)-1]='\0';
+
+    
+    int len = strlen(nombre_limpio);
+    if(len >1 && nombre_limpio[len-1] == '/'){
+
+        nombre_limpio[len-1]='\0';
     }
 
+    //ya tiene el nombre sin el ultimo '/' por si es otra ruta para un directorio 
+
+    //o si es la ruta de un archivo 
 
     char *nombre_base = strrchr(nombre_archivo, '/');
     if(nombre_base == NULL){
@@ -207,7 +220,7 @@ int procesar_archivos(const char *nombre_archivo, const char *destino_personal){
         nombre_base++;
     }
     
-    //construir ruta destino 
+    // //construir ruta destino 
     char ruta_destino[1024]; 
     
     //si hubo -d quiere decir que quiere una ruta que el usuario quiere 
@@ -353,7 +366,7 @@ int copiar_borrar(const char *origen, const char *destino){
             return -1;
         }
         
-        printf("MOVIENDO: %s\n", origen);
+        printf("\nMOVIENDO: %s\n", origen);
     }
     else{
 	//si no se pudo mover el archivo eliminaos el archivo destini porque no se usara.
@@ -362,4 +375,8 @@ int copiar_borrar(const char *origen, const char *destino){
     }
 
 
+}
+
+void print_msg(const char *msg) {
+    write(STDOUT_FILENO, msg, strlen(msg));
 }

@@ -61,12 +61,16 @@ int main() {
 
 
 	//es lo mismo solo que lo tendre que hacer 2 veces para obtener la ruta actual en este instante para volver 
-	//
+    // int n=snprintf(HOME_SHELL, sizeof(HOME_SHELL), "%s", getenv("HOME"));
+    //  if(n<=0){
+	// 	perror("error al obtener la ruta home\n");
+	// }
+
 	if(getcwd(HOME_SHELL, sizeof(HOME_SHELL))==NULL){
 		perror("error al obtener la ruta home\n");
 	}
 
-
+    
 	//estatus para verificar si seguir o salir de la shell 
     int status = 1;
 
@@ -585,7 +589,7 @@ int borrar_rastro(char **args) {
             } else {
                 flags |= O_TRUNC;
             }
-            /
+            
             int fd_out = open(output_file, flags, 0644);
             if (fd_out < 0) {
                 perror("Error creando archivo de salida");
